@@ -7,7 +7,9 @@
         "field": "wizard_admin_password",
         "label": "新口令（留空则不修改）",
         "initValue": "",
-        "rules": { "min": 8, "max": 64, "message": "至少 8 位" }
+        "rules": [
+          { "min": 8, "max": 64, "message": "口令长度需为 8-64 位" }
+        ]
       },
       {
         "type": "switch",
