@@ -7,12 +7,15 @@
         "field": "wizard_admin_password",
         "label": "访问口令",
         "initValue": "",
-        "rules": { "required": true, "min": 8, "max": 64, "message": "至少 8 位，建议 12 位以上" }
+        "rules": [
+          { "required": true, "message": "请设置访问口令" },
+          { "min": 8, "max": 64, "message": "口令长度需为 8-64 位" }
+        ]
       },
       {
         "type": "switch",
         "field": "wizard_bind_local",
-        "label": "仅本机访问（更安全，需 SSH 隧道访问）",
+        "label": "仅本机访问（更安全，需 SSH 隧道）",
         "initValue": "false"
       },
       {
@@ -28,7 +31,7 @@
       },
       {
         "type": "tips",
-        "helpText": "PortGuard 全程只读：只读取 <code>/proc</code>、应用清单与 nftables 规则，不修改任何配置、不启停任何服务。"
+        "helpText": "PortGuard 全程只读：只读取 /proc、应用清单与 nftables 规则，不修改任何配置，也不启停任何服务。"
       }
     ]
   }
