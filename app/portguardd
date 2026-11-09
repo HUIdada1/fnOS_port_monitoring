@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""PortGuard daemon - read-only port situational awareness for fnOS.
+
+Usage:
+  portguardd --port 18110 --data /vol1/@appdata/portguard
+  portguardd --init --data ... --password secret
+  portguardd --once --data ...
+"""
+
+import argparse
+import json
+import os
+import signal
+import sys
+import threading
+import time
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
+
+import pg_analyze
+import pg_apps
+import pg_collect
+import pg_config
+import pg_net
+import pg_server
+import pg_store
+
+VERSION = "1.0.0"
+LOG_PREFIX = "[portguard]"
+
+
+def log(*args):
+    sys.stdout.write("%s %s %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), LOG_PREFIX,
+                                     " ".join(str(a) for a in args)))
+    sys.stdout.flush()
+
+
+class Core(object):
+    def __init__(self, app_dir, data_dir, cfg):
+        self.app_dir = app_dir
+        self.data_dir = data_dir
+        self.cfg = cfg
+        self.version = VERSION
+        self.started = time.time()
+        self.store = pg_store.Store(data_dir)
+        self.sessions = pg_server.Sessions()
+        self.usage = pg_analyze.Usage(window=int(cfg.get("window", 300)))
+        self.kb = pg_analyze.load_kb(os.path.join(app_dir, "kb_ports.json"))
+        self.degraded = hasattr(os, "geteuid") and os.geteuid() != 0
+        self._state = {"ports": [], "overview": {}, "conflicts": [], "labels": {}}
+        self._lock = threading.Lock()
+        self._scan_lock = threading.Lock()
+        self._last_error = ""
+        self._last_dnat = {}
+        self._scan_count = 0
+
+    # ------------------------------------------------------------------ scan
+    def scan_once(self):
+        with self._scan_lock:
+            try:
+                snap = pg_collect.snapshot()
+                meta = pg_apps.refresh()
+                dnat = pg_net.read_dnat()
+                self._last_dnat = dnat
+                self.usage.update(snap["ts"], pg_collect.established(), dnat.get("rules", []))
+                records, overview, conflicts = pg_analyze.analyze(snap, self.usage, meta, dnat)
+
+                labels = self.store.labels()
+                for rec in records:
+                    item = labels.get((rec["port"], rec["proto"]))
+                    if item:
+                        rec["note"] = item["note"]
+                        rec["accepted"] = item["accepted"]
+
+                overview["degraded"] = self.degraded
+                overview["interval"] = int(self.cfg.get("interval", 10))
+                overview["version"] = VERSION
+                overview["dnat_tool"] = dnat.get("tool", "")
+                overview["dnat_error"] = dnat.get("error", "")
+
+                self.store.save_snapshot(records, snap["ts"],
+                                         write_metrics=(self._scan_count % 6 == 1))
+                self._scan_count += 1
+                with self._lock:
+                    self._state = {
+                        "ports": records,
+                        "overview": overview,
+                        "conflicts": conflicts,
+                        "labels": {("%s:%s" % (k[0], k[1])): v for k, v in labels.items()},
+                    }
+                self._last_error = ""
+                return True
+            except Exception as exc:  # keep the daemon alive no matter what
+                self._last_error = "%s: %s" % (type(exc).__name__, exc)
+                log("scan failed:", self._last_error)
+                return False
+
+    def get_state(self):
+        with self._lock:
+            state = dict(self._state)
+        if self._last_error:
+            state.setdefault("overview", {})["error"] = self._last_error
+        return state
+
+    def refresh(self, force=False):
+        self.scan_once()
+
+    def set_password(self, password):
+        self.cfg["password"] = pg_config.hash_password(password)
+        pg_config.save(self.data_dir, self.cfg)
+
+    def save_cfg(self):
+        pg_config.save(self.data_dir, self.cfg)
+
+    # ------------------------------------------------------------------ loop
+    def scanner_loop(self, stop_event):
+        last_prune = 0
+        while not stop_event.is_set():
+            interval = max(5, int(self.cfg.get("interval", 10)))
+            stop_event.wait(interval)
+            if stop_event.is_set():
+                break
+            self.scan_once()
+            if time.time() - last_prune > 3600:
+                self.store.prune(int(self.cfg.get("retention_days", 90)))
+                last_prune = time.time()
+
+
+def init_config(data_dir, password=None, interval=None, bind=None, port=None):
+    cfg = pg_config.load(data_dir)
+    if password:
+        cfg["password"] = pg_config.hash_password(password)
+    if interval:
+        cfg["interval"] = max(5, int(interval))
+    if bind:
+        cfg["bind"] = bind
+    if port:
+        cfg["port"] = int(port)
+    pg_config.save(data_dir, cfg)
+    pg_store.Store(data_dir)
+    return cfg
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="PortGuard for fnOS")
+    parser.add_argument("--port", type=int, default=0, help="listen port")
+    parser.add_argument("--bind", default="", help="listen address")
+    parser.add_argument("--data", default="", help="data directory")
+    parser.add_argument("--interval", type=int, default=0, help="scan interval seconds")
+    parser.add_argument("--init", action="store_true", help="initialize config and exit")
+    parser.add_argument("--password", default="", help="set admin password (with --init)")
+    parser.add_argument("--migrate", action="store_true", help="run storage migration and exit")
+    parser.add_argument("--once", action="store_true", help="print one scan as JSON and exit")
+    parser.add_argument("--version", action="store_true", help="print version")
+    args = parser.parse_args(argv)
+
+    if args.version:
+        print(VERSION)
+        return 0
+
+    data_dir = args.data or os.environ.get("TRIM_PKGVAR") or \
+        os.path.join(os.path.dirname(APP_DIR), "var")
+    os.makedirs(data_dir, exist_ok=True)
+
+    if args.init:
+        password = args.password or os.environ.get("wizard_admin_password", "")
+        interval = args.interval or os.environ.get("wizard_interval", "")
+        bind = args.bind
+        if not bind:
+            bind_local = os.environ.get("wizard_bind_local", "")
+            if bind_local == "true":
+                bind = "127.0.0.1"
+            elif bind_local == "false":
+                bind = "0.0.0.0"
+        cfg = init_config(data_dir, password, interval, bind,
+                          args.port or os.environ.get("TRIM_SERVICE_PORT"))
+        log("initialized:", pg_config.config_path(data_dir), "port:", cfg["port"])
+        return 0
+
+    if args.migrate:
+        pg_store.Store(data_dir)
+        log("storage ready")
+        return 0
+
+    cfg = pg_config.load(data_dir)
+    if args.port:
+        cfg["port"] = args.port
+    elif os.environ.get("TRIM_SERVICE_PORT", "").isdigit():
+        cfg["port"] = int(os.environ["TRIM_SERVICE_PORT"])
+    if args.bind:
+        cfg["bind"] = args.bind
+    if args.interval:
+        cfg["interval"] = max(5, int(args.interval))
+    if os.environ.get("WIZARD_BIND") == "true":
+        cfg["bind"] = "127.0.0.1"
+
+    core = Core(APP_DIR, data_dir, cfg)
+
+    if args.once:
+        core.scan_once()
+        state = core.get_state()
+        print(json.dumps({"overview": state["overview"],
+                          "ports": state["ports"]}, ensure_ascii=False, indent=2))
+        return 0
+
+    log("starting v%s, data=%s, listen=%s:%d, interval=%ds, degraded=%s"
+        % (VERSION, data_dir, cfg["bind"], cfg["port"], cfg["interval"], core.degraded))
+
+    core.scan_once()
+
+    stop_event = threading.Event()
+    scanner = threading.Thread(target=core.scanner_loop, args=(stop_event,), daemon=True)
+    scanner.start()
+
+    try:
+        httpd = pg_server.serve(core)
+    except OSError as exc:
+        log("cannot bind %s:%s -> %s" % (cfg["bind"], cfg["port"], exc))
+        return 1
+
+    def _stop(signum, frame):
+        log("signal", signum, "shutting down")
+        stop_event.set()
+
+    try:
+        signal.signal(signal.SIGTERM, _stop)
+        signal.signal(signal.SIGINT, _stop)
+    except (ValueError, OSError):
+        pass
+
+    httpd.timeout = 1
+    log("ready on http://%s:%d" % (cfg["bind"], cfg["port"]))
+    while not stop_event.is_set():
+        httpd.handle_request()
+    try:
+        httpd.server_close()
+    except Exception:
+        pass
+    log("stopped")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

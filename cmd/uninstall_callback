@@ -1,0 +1,22 @@
+#!/bin/bash
+# 卸载后：清理数据目录（严格校验路径，避免误删）
+set -u
+
+APP_LINK="/var/apps/portguard"
+[ -z "${TRIM_PKGVAR:-}" ] && [ -L "${APP_LINK}/var" ] && \
+    TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
+
+if [ -z "${TRIM_PKGVAR:-}" ]; then
+    exit 0
+fi
+
+case "${TRIM_PKGVAR}" in
+    */@appdata/portguard)
+        rm -rf "${TRIM_PKGVAR:?}/"* 2>/dev/null
+        ;;
+    *)
+        echo "[portguard] 跳过清理，路径不在预期范围: ${TRIM_PKGVAR}"
+        ;;
+esac
+
+exit 0

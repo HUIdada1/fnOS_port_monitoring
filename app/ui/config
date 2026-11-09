@@ -1,0 +1,17 @@
+{
+    ".url": {
+        "portguard.Application": {
+            "title": "端口态势感知",
+            "desc": "端口占用与暴露面分析",
+            "icon": "images/icon_{0}.png",
+            "type": "url",
+            "protocol": "http",
+            "port": "18110",
+            "url": "/",
+            "allUsers": false,
+            "control": {
+                "accessPerm": "readonly"
+            }
+        }
+    }
+}

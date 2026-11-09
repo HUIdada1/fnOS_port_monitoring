@@ -1,0 +1,2366 @@
+{
+ "10000": {
+  "advice": "启用强口令，禁止公网",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "Webmin 系统管理面板，权限极高",
+  "expect_proc": [
+   "miniserv.pl"
+  ],
+  "sensitivity": 30,
+  "service": "Webmin"
+ },
+ "10080": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "10250": {
+  "advice": "禁止公网",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "kubelet API，可执行命令",
+  "expect_proc": [
+   "kubelet"
+  ],
+  "sensitivity": 30,
+  "service": "kubelet"
+ },
+ "10255": {
+  "advice": "关闭",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "kubelet 只读端口",
+  "expect_proc": [
+   "kubelet"
+  ],
+  "sensitivity": 30,
+  "service": "kubelet 只读"
+ },
+ "10257": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "控制面组件端口",
+  "expect_proc": [
+   "kube-controller"
+  ],
+  "sensitivity": 30,
+  "service": "kube-controller"
+ },
+ "10259": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "调度器端口",
+  "expect_proc": [
+   "kube-scheduler"
+  ],
+  "sensitivity": 30,
+  "service": "kube-scheduler"
+ },
+ "10443": {
+  "advice": "确认证书与范围",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 HTTPS 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "HTTPS (备用)"
+ },
+ "10500": {
+  "advice": "系统服务，保持默认",
+  "auth_score": 0,
+  "category": "web",
+  "desc": "飞牛 Office 文档服务（仅本机）",
+  "expect_proc": [
+   "docs"
+  ],
+  "sensitivity": 12,
+  "service": "fnOS Office 文档"
+ },
+ "10501": {
+  "advice": "系统服务，保持默认",
+  "auth_score": 0,
+  "category": "web",
+  "desc": "飞牛 Office 文档服务（仅本机）",
+  "expect_proc": [
+   "docs"
+  ],
+  "sensitivity": 12,
+  "service": "fnOS Office 文档"
+ },
+ "1080": {
+  "advice": "启用认证并限制来源",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "SOCKS 代理端口，常被用于绕过网络限制",
+  "expect_proc": [
+   "ssh",
+   "dante",
+   "3proxy"
+  ],
+  "sensitivity": 18,
+  "service": "SOCKS5 代理"
+ },
+ "10808": {
+  "advice": "仅本机或内网",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "v2ray SOCKS 入口",
+  "expect_proc": [
+   "v2ray",
+   "xray"
+  ],
+  "sensitivity": 18,
+  "service": "v2ray (SOCKS)"
+ },
+ "10809": {
+  "advice": "仅本机或内网",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "v2ray HTTP 入口",
+  "expect_proc": [
+   "v2ray",
+   "xray"
+  ],
+  "sensitivity": 18,
+  "service": "v2ray (HTTP)"
+ },
+ "111": {
+  "advice": "无需跨网访问时限制来源",
+  "auth_score": 0,
+  "category": "fileshare",
+  "desc": "RPC 端口映射服务，NFS 依赖",
+  "expect_any": true,
+  "expect_proc": [
+   "rpcbind",
+   "systemd"
+  ],
+  "kernel": true,
+  "sensitivity": 25,
+  "service": "rpcbind"
+ },
+ "11211": {
+  "advice": "仅本机监听，切勿暴露",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Memcached 无认证缓存服务",
+  "expect_proc": [
+   "memcached"
+  ],
+  "sensitivity": 35,
+  "service": "Memcached"
+ },
+ "11434": {
+  "advice": "默认仅本机，暴露前先加反向代理鉴权",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "本地大模型推理服务，默认无认证",
+  "expect_proc": [
+   "ollama"
+  ],
+  "sensitivity": 18,
+  "service": "Ollama"
+ },
+ "1194": {
+  "advice": "使用强证书与 TLS 认证",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "OpenVPN 服务端口",
+  "expect_proc": [
+   "openvpn"
+  ],
+  "sensitivity": 18,
+  "service": "OpenVPN"
+ },
+ "137": {
+  "advice": "无 Windows 共享需求可关闭",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "NetBIOS 名称服务（UDP）",
+  "expect_any": true,
+  "expect_proc": [
+   "nmbd"
+  ],
+  "sensitivity": 25,
+  "service": "NetBIOS Name"
+ },
+ "138": {
+  "advice": "无 Windows 共享需求可关闭",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "NetBIOS 数据报服务（UDP）",
+  "expect_any": true,
+  "expect_proc": [
+   "nmbd"
+  ],
+  "sensitivity": 25,
+  "service": "NetBIOS Datagram"
+ },
+ "139": {
+  "advice": "优先使用 445",
+  "auth_score": 0,
+  "category": "fileshare",
+  "desc": "NetBIOS 会话服务，老式 SMB",
+  "expect_any": true,
+  "expect_proc": [
+   "smbd"
+  ],
+  "sensitivity": 25,
+  "service": "NetBIOS Session"
+ },
+ "1433": {
+  "advice": "限制来源并启用强口令",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MSSQL 默认端口",
+  "expect_proc": [
+   "sqlservr",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "Microsoft SQL Server"
+ },
+ "1434": {
+  "advice": "无需对外，建议关闭",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MSSQL 实例发现服务（UDP）",
+  "expect_proc": [
+   "sqlservr"
+  ],
+  "sensitivity": 35,
+  "service": "MSSQL Browser"
+ },
+ "1521": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Oracle 监听器端口",
+  "expect_proc": [
+   "tnslsnr",
+   "oracle"
+  ],
+  "sensitivity": 35,
+  "service": "Oracle DB"
+ },
+ "15672": {
+  "advice": "修改默认口令",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "RabbitMQ Web 管理界面",
+  "expect_proc": [
+   "beam.smp"
+  ],
+  "sensitivity": 22,
+  "service": "RabbitMQ 管理台"
+ },
+ "161": {
+  "advice": "修改默认团体名",
+  "auth_score": 10,
+  "category": "other",
+  "desc": "SNMP 设备管理（UDP）",
+  "expect_proc": [
+   "snmpd"
+  ],
+  "sensitivity": 15,
+  "service": "SNMP"
+ },
+ "162": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "other",
+  "desc": "SNMP 告警接收",
+  "expect_proc": [
+   "snmptrapd"
+  ],
+  "sensitivity": 15,
+  "service": "SNMP Trap"
+ },
+ "16379": {
+  "advice": "仅集群内网",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Redis 集群总线",
+  "expect_proc": [
+   "redis-server"
+  ],
+  "sensitivity": 35,
+  "service": "Redis Cluster"
+ },
+ "16601": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "Lucky 反向代理/内网穿透工具",
+  "expect_proc": [
+   "lucky"
+  ],
+  "sensitivity": 30,
+  "service": "Lucky 管理端口"
+ },
+ "16686": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "链路追踪界面",
+  "expect_proc": [
+   "jaeger"
+  ],
+  "sensitivity": 22,
+  "service": "Jaeger UI"
+ },
+ "1701": {
+  "advice": "配合 IPSec 使用",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "L2TP VPN（UDP）",
+  "expect_proc": [
+   "xl2tpd"
+  ],
+  "sensitivity": 18,
+  "service": "L2TP"
+ },
+ "1723": {
+  "advice": "立即停用，改用 WireGuard",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "PPTP VPN，加密已被破解",
+  "expect_proc": [
+   "pptpd"
+  ],
+  "sensitivity": 18,
+  "service": "PPTP"
+ },
+ "18090": {
+  "advice": "启用强口令 + 二次验证，禁止公网",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "1Panel 运维面板，控制整机",
+  "expect_proc": [
+   "1panel"
+  ],
+  "sensitivity": 30,
+  "service": "1Panel 面板"
+ },
+ "18100": {
+  "advice": "如已不再使用可卸载",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "第三方端口查看应用",
+  "expect_proc": [
+   "python3",
+   "python"
+  ],
+  "sensitivity": 30,
+  "service": "portview 端口面板"
+ },
+ "18110": {
+  "advice": "启用访问口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "本项目自身的 Web 服务端口",
+  "expect_proc": [
+   "portguard",
+   "python3"
+  ],
+  "sensitivity": 30,
+  "service": "PortGuard 端口态势"
+ },
+ "1883": {
+  "advice": "启用认证，改用 8883",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "MQTT 明文接入",
+  "expect_proc": [
+   "mosquitto",
+   "docker-proxy"
+  ],
+  "sensitivity": 22,
+  "service": "MQTT"
+ },
+ "1900": {
+  "advice": "不需要发现功能可关闭",
+  "auth_score": 0,
+  "category": "discovery",
+  "desc": "UPnP/SSDP 设备发现（UDP）",
+  "expect_any": true,
+  "expect_proc": [
+   "upnp_service"
+  ],
+  "sensitivity": 4,
+  "service": "SSDP"
+ },
+ "19132": {
+  "advice": "按需开放",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "Minecraft 基岩版（UDP）",
+  "expect_proc": [
+   "bedrock_server"
+  ],
+  "sensitivity": 6,
+  "service": "Minecraft Bedrock"
+ },
+ "19530": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "Milvus 向量数据库",
+  "expect_proc": [
+   "milvus"
+  ],
+  "sensitivity": 18,
+  "service": "Milvus"
+ },
+ "19999": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "实时监控面板",
+  "expect_proc": [
+   "netdata"
+  ],
+  "sensitivity": 12,
+  "service": "Netdata"
+ },
+ "20000": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "Usermin 用户面板",
+  "expect_proc": [
+   "miniserv.pl"
+  ],
+  "sensitivity": 30,
+  "service": "Usermin"
+ },
+ "20048": {
+  "advice": "仅内网使用",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "NFS 挂载服务备用端口",
+  "expect_proc": [
+   "rpc.mountd"
+  ],
+  "sensitivity": 25,
+  "service": "NFS mountd (备用)"
+ },
+ "2049": {
+  "advice": "限制来源网段，避免全网段可挂载",
+  "auth_score": 0,
+  "category": "fileshare",
+  "desc": "NFS 文件共享（内核态服务）",
+  "expect_any": true,
+  "expect_proc": [
+   "nfsd"
+  ],
+  "kernel": true,
+  "sensitivity": 25,
+  "service": "NFS"
+ },
+ "2082": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "cPanel 面板",
+  "expect_proc": [
+   "cpsrvd"
+  ],
+  "sensitivity": 30,
+  "service": "cPanel"
+ },
+ "2083": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "cPanel 加密面板",
+  "expect_proc": [
+   "cpsrvd"
+  ],
+  "sensitivity": 30,
+  "service": "cPanel SSL"
+ },
+ "2086": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "WHM 主机管理面板",
+  "expect_proc": [
+   "cpsrvd"
+  ],
+  "sensitivity": 30,
+  "service": "WHM"
+ },
+ "2087": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "WHM 加密面板",
+  "expect_proc": [
+   "cpsrvd"
+  ],
+  "sensitivity": 30,
+  "service": "WHM SSL"
+ },
+ "21": {
+  "advice": "改用 SFTP 或启用 FTPS",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "FTP 控制端口，明文传输凭据",
+  "expect_any": true,
+  "expect_proc": [
+   "smbftpd",
+   "vsftpd",
+   "pure-ftpd",
+   "proftpd"
+  ],
+  "sensitivity": 25,
+  "service": "FTP"
+ },
+ "2181": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "ZooKeeper 客户端端口",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 22,
+  "service": "ZooKeeper"
+ },
+ "22": {
+  "advice": "禁用密码登录，改用密钥",
+  "auth_score": 0,
+  "category": "remote",
+  "desc": "SSH 远程管理端口",
+  "expect_any": true,
+  "expect_proc": [
+   "sshd",
+   "docker-proxy"
+  ],
+  "sensitivity": 30,
+  "service": "SSH / SFTP"
+ },
+ "2222": {
+  "advice": "禁用密码登录",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "备用 SSH 端口",
+  "expect_proc": [
+   "sshd"
+  ],
+  "sensitivity": 30,
+  "service": "SSH (备用)"
+ },
+ "23": {
+  "advice": "立即关闭，改用 SSH",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "Telnet 明文远程登录，极不安全",
+  "expect_proc": [
+   "telnetd"
+  ],
+  "sensitivity": 30,
+  "service": "Telnet"
+ },
+ "2375": {
+  "advice": "立即关闭或改 TLS",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "Docker 未加密 API，等于整机 root",
+  "expect_proc": [
+   "dockerd"
+  ],
+  "sensitivity": 30,
+  "service": "Docker API (明文)"
+ },
+ "2376": {
+  "advice": "启用客户端证书",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "Docker TLS API",
+  "expect_proc": [
+   "dockerd"
+  ],
+  "sensitivity": 30,
+  "service": "Docker API (TLS)"
+ },
+ "2379": {
+  "advice": "启用 TLS 与认证",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "etcd 客户端接口，泄露即等于泄露集群",
+  "expect_proc": [
+   "etcd",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "etcd Client"
+ },
+ "2380": {
+  "advice": "仅集群内网互通",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "etcd 节点间通信",
+  "expect_proc": [
+   "etcd"
+  ],
+  "sensitivity": 35,
+  "service": "etcd Peer"
+ },
+ "2456": {
+  "advice": "设置访问密码",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "英灵神殿服务端",
+  "expect_proc": [
+   "valheim_server"
+  ],
+  "sensitivity": 6,
+  "service": "Valheim"
+ },
+ "25565": {
+  "advice": "启用白名单与正版验证",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "Minecraft Java 版服务端",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 6,
+  "service": "Minecraft Java"
+ },
+ "25575": {
+  "advice": "设置强口令并仅本机",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "Minecraft 远程控制台，权限极高",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 6,
+  "service": "Minecraft RCON"
+ },
+ "25672": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Erlang 节点间通信",
+  "expect_proc": [
+   "beam.smp"
+  ],
+  "sensitivity": 22,
+  "service": "Erlang 分布式"
+ },
+ "26257": {
+  "advice": "启用 TLS",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "CockroachDB SQL 端口",
+  "expect_proc": [
+   "cockroach"
+  ],
+  "sensitivity": 35,
+  "service": "CockroachDB"
+ },
+ "26379": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Redis 哨兵",
+  "expect_proc": [
+   "redis-sentinel"
+  ],
+  "sensitivity": 35,
+  "service": "Redis Sentinel"
+ },
+ "27015": {
+  "advice": "设置 RCON 密码",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "Source 引擎服务器与 RCON",
+  "expect_proc": [
+   "srcds_linux"
+  ],
+  "sensitivity": 6,
+  "service": "Source RCON"
+ },
+ "27017": {
+  "advice": "启用认证并限制来源地址",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MongoDB 默认端口",
+  "expect_proc": [
+   "mongod",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "MongoDB"
+ },
+ "27018": {
+  "advice": "仅集群内网互通",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MongoDB 分片集群端口",
+  "expect_proc": [
+   "mongod"
+  ],
+  "sensitivity": 35,
+  "service": "MongoDB (分片)"
+ },
+ "27019": {
+  "advice": "仅集群内网互通",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MongoDB 配置服务器端口",
+  "expect_proc": [
+   "mongod"
+  ],
+  "sensitivity": 35,
+  "service": "MongoDB (配置)"
+ },
+ "3000": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "Node 应用与 Grafana 常用端口",
+  "expect_proc": [
+   "node",
+   "grafana-server",
+   "docker-proxy"
+  ],
+  "sensitivity": 12,
+  "service": "Web (Node/Grafana)"
+ },
+ "3001": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "Node 应用备用端口",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "30016": {
+  "advice": "仅管理员可用，注意账号安全",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "飞牛 Web 终端，等价于 SSH 权限",
+  "expect_any": true,
+  "expect_proc": [
+   "fntermx"
+  ],
+  "sensitivity": 30,
+  "service": "fnOS FntermX 终端"
+ },
+ "30017": {
+  "advice": "确认暴露范围",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "Lucky 对外服务端口",
+  "expect_proc": [
+   "lucky"
+  ],
+  "sensitivity": 30,
+  "service": "Lucky 服务端口"
+ },
+ "30018": {
+  "advice": "系统服务，保持默认",
+  "auth_score": 0,
+  "category": "panel",
+  "desc": "飞牛应用统一网关（HTTP）",
+  "expect_any": true,
+  "expect_proc": [
+   "nginx",
+   "trim_open_gateway"
+  ],
+  "sensitivity": 30,
+  "service": "fnOS 应用网关"
+ },
+ "30019": {
+  "advice": "系统服务，保持默认",
+  "auth_score": 0,
+  "category": "panel",
+  "desc": "飞牛应用统一网关（HTTPS）；UDP 侧为 pxy 连接服务",
+  "expect_any": true,
+  "expect_proc": [
+   "nginx",
+   "pxy"
+  ],
+  "sensitivity": 30,
+  "service": "fnOS 应用网关 (HTTPS) / pxy"
+ },
+ "3050": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Firebird 数据库端口",
+  "expect_proc": [
+   "fbguard",
+   "firebird"
+  ],
+  "sensitivity": 35,
+  "service": "Firebird"
+ },
+ "3100": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "日志聚合服务",
+  "expect_proc": [
+   "loki"
+  ],
+  "sensitivity": 12,
+  "service": "Loki"
+ },
+ "3128": {
+  "advice": "启用认证，避免成为开放代理",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "HTTP 正向代理",
+  "expect_proc": [
+   "squid"
+  ],
+  "sensitivity": 18,
+  "service": "Squid 代理"
+ },
+ "32400": {
+  "advice": "启用账号认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Plex 媒体服务器端口",
+  "expect_any": true,
+  "expect_proc": [
+   "Plex Media Server",
+   "docker-proxy"
+  ],
+  "sensitivity": 6,
+  "service": "Plex"
+ },
+ "32469": {
+  "advice": "不需要可关闭",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Plex DLNA 服务",
+  "expect_proc": [
+   "Plex DLNA Server"
+  ],
+  "sensitivity": 6,
+  "service": "Plex DLNA"
+ },
+ "3260": {
+  "advice": "启用 CHAP 认证",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "iSCSI 块存储目标",
+  "expect_proc": [
+   "iscsid"
+  ],
+  "sensitivity": 25,
+  "service": "iSCSI"
+ },
+ "3306": {
+  "advice": "仅绑定 127.0.0.1，或经反向代理并启用强认证",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MySQL 关系型数据库默认端口",
+  "expect_proc": [
+   "mysqld",
+   "mariadbd",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "MySQL"
+ },
+ "33060": {
+  "advice": "与 3306 同等对待，不要暴露到公网",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MySQL X Protocol（新版驱动使用）",
+  "expect_proc": [
+   "mysqld",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "MySQL X Protocol"
+ },
+ "3307": {
+  "advice": "确认是否确有必要对外监听",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "MySQL 第二个实例常用端口",
+  "expect_proc": [
+   "mysqld",
+   "mariadbd"
+  ],
+  "sensitivity": 35,
+  "service": "MySQL (备用实例)"
+ },
+ "3389": {
+  "advice": "禁止公网暴露，走 VPN",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "Windows 远程桌面",
+  "expect_proc": [
+   "termsrv"
+  ],
+  "sensitivity": 30,
+  "service": "RDP"
+ },
+ "34197": {
+  "advice": "按需开放",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "异星工厂服务端（UDP）",
+  "expect_proc": [
+   "factorio"
+  ],
+  "sensitivity": 6,
+  "service": "Factorio"
+ },
+ "35729": {
+  "advice": "仅开发环境",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "前端热更新服务",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "LiveReload"
+ },
+ "3702": {
+  "advice": "正常现象",
+  "auth_score": 0,
+  "category": "discovery",
+  "desc": "Windows 网络发现（UDP）",
+  "expect_any": true,
+  "expect_proc": [
+   "wsdd2"
+  ],
+  "sensitivity": 4,
+  "service": "WS-Discovery"
+ },
+ "4173": {
+  "advice": "仅开发环境",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "Vite 预览服务器",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "Vite Preview"
+ },
+ "4200": {
+  "advice": "仅开发环境",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "Angular 开发服务器",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "Angular Dev"
+ },
+ "4243": {
+  "advice": "关闭",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "旧版 Docker API 端口",
+  "expect_proc": [
+   "dockerd"
+  ],
+  "sensitivity": 30,
+  "service": "Docker API (旧)"
+ },
+ "4317": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "OpenTelemetry 收集端口",
+  "expect_proc": [
+   "otelcol"
+  ],
+  "sensitivity": 12,
+  "service": "OTLP gRPC"
+ },
+ "4318": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "OpenTelemetry HTTP 端口",
+  "expect_proc": [
+   "otelcol"
+  ],
+  "sensitivity": 12,
+  "service": "OTLP HTTP"
+ },
+ "4369": {
+  "advice": "仅本机/内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Erlang 端口映射守护进程",
+  "expect_proc": [
+   "epmd",
+   "systemd"
+  ],
+  "sensitivity": 22,
+  "service": "Erlang EPMD"
+ },
+ "443": {
+  "advice": "保持证书有效",
+  "auth_score": 0,
+  "category": "web",
+  "desc": "加密 Web 服务入口",
+  "expect_any": true,
+  "expect_proc": [
+   "nginx",
+   "httpd",
+   "apache2",
+   "openresty"
+  ],
+  "sensitivity": 12,
+  "service": "HTTPS"
+ },
+ "445": {
+  "advice": "禁止公网暴露，启用强口令",
+  "auth_score": 0,
+  "category": "fileshare",
+  "desc": "SMB 文件共享，勒索软件重点目标",
+  "expect_any": true,
+  "expect_proc": [
+   "smbd",
+   "docker-proxy"
+  ],
+  "sensitivity": 25,
+  "service": "SMB"
+ },
+ "4500": {
+  "advice": "仅对必要来源放行",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "IPSec NAT 穿透（UDP）",
+  "expect_proc": [
+   "charon",
+   "strongswan",
+   "pluto"
+  ],
+  "sensitivity": 18,
+  "service": "IPSec NAT-T"
+ },
+ "4533": {
+  "advice": "启用账号认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Navidrome 音乐服务",
+  "expect_proc": [
+   "navidrome",
+   "docker-proxy"
+  ],
+  "sensitivity": 6,
+  "service": "Navidrome"
+ },
+ "49152": {
+  "advice": "除非必要，建议关闭",
+  "auth_score": 0,
+  "category": "discovery",
+  "desc": "UPnP 自动端口映射，可能悄悄打穿路由器",
+  "expect_any": true,
+  "expect_proc": [
+   "upnp_service"
+  ],
+  "sensitivity": 4,
+  "service": "UPnP 端口映射"
+ },
+ "500": {
+  "advice": "启用强预共享密钥",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "IPSec 第一阶段协商（UDP）",
+  "expect_proc": [
+   "charon",
+   "strongswan",
+   "pluto"
+  ],
+  "sensitivity": 18,
+  "service": "IPSec ISAKMP"
+ },
+ "5000": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "Flask/Registry 等常用端口",
+  "expect_proc": [
+   "python",
+   "node",
+   "dotnet"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "50000": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "IBM DB2 端口",
+  "expect_proc": [
+   "db2sysc"
+  ],
+  "sensitivity": 35,
+  "service": "DB2"
+ },
+ "5005": {
+  "advice": "暴露即为风险，建议改用 5006 或反向代理加 TLS",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "WebDAV 明文入口；Java 远程调试也常用此端口",
+  "expect_any": true,
+  "expect_proc": [
+   "webdav",
+   "java"
+  ],
+  "sensitivity": 25,
+  "service": "WebDAV (HTTP) / JDWP"
+ },
+ "5006": {
+  "advice": "确认账号强度",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "WebDAV 加密访问入口",
+  "expect_any": true,
+  "expect_proc": [
+   "webdav"
+  ],
+  "sensitivity": 25,
+  "service": "WebDAV (HTTPS)"
+ },
+ "51413": {
+  "advice": "按需映射",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Transmission 传输端口",
+  "expect_proc": [
+   "transmission-daemon"
+  ],
+  "sensitivity": 6,
+  "service": "Transmission Peer"
+ },
+ "515": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "other",
+  "desc": "传统打印服务",
+  "expect_proc": [
+   "lpd"
+  ],
+  "sensitivity": 15,
+  "service": "LPD 打印"
+ },
+ "5173": {
+  "advice": "仅开发环境",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "Vite 开发服务器",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "Vite Dev"
+ },
+ "51820": {
+  "advice": "妥善保管私钥，仅放行必要网段",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "WireGuard VPN（UDP），密钥即身份",
+  "expect_proc": [
+   "wg",
+   "wg-quick"
+  ],
+  "sensitivity": 18,
+  "service": "WireGuard"
+ },
+ "5244": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "AList 网盘挂载 Web",
+  "expect_proc": [
+   "alist",
+   "docker-proxy"
+  ],
+  "sensitivity": 12,
+  "service": "AList"
+ },
+ "5353": {
+  "advice": "正常现象，无需处理",
+  "auth_score": 0,
+  "category": "discovery",
+  "desc": "局域网设备发现（UDP，可多进程共享）",
+  "expect_any": true,
+  "expect_proc": [
+   "avahi-daemon",
+   "trim-media"
+  ],
+  "sensitivity": 4,
+  "service": "mDNS"
+ },
+ "5355": {
+  "advice": "无解析需求可关闭",
+  "auth_score": 0,
+  "category": "discovery",
+  "desc": "局域网名称解析（UDP），常被忽略",
+  "expect_proc": [
+   "systemd-resolved"
+  ],
+  "sensitivity": 4,
+  "service": "LLMNR"
+ },
+ "5432": {
+  "advice": "保持仅本机监听，跨机访问走隧道",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "PostgreSQL 默认端口",
+  "expect_proc": [
+   "postgres",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "PostgreSQL"
+ },
+ "5433": {
+  "advice": "容器映射时务必加 127.0.0.1 前缀",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "PostgreSQL 映射到宿主机的常用端口",
+  "expect_proc": [
+   "docker-proxy",
+   "postgres"
+  ],
+  "sensitivity": 35,
+  "service": "PostgreSQL (映射)"
+ },
+ "548": {
+  "advice": "macOS 已不推荐，建议关闭",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "Apple 文件共享协议",
+  "expect_proc": [
+   "afpd"
+  ],
+  "sensitivity": 25,
+  "service": "AFP"
+ },
+ "5601": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Kibana 日志界面",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Kibana"
+ },
+ "5666": {
+  "advice": "限制 allowed_hosts",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Nagios 远程插件执行，可读取主机状态",
+  "expect_proc": [
+   "nrpe"
+  ],
+  "sensitivity": 12,
+  "service": "NRPE"
+ },
+ "5667": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Nagios 被动检查接收",
+  "expect_proc": [
+   "nsca"
+  ],
+  "sensitivity": 12,
+  "service": "NSCA"
+ },
+ "5671": {
+  "advice": "确认证书",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "RabbitMQ 加密端口",
+  "expect_proc": [
+   "beam.smp"
+  ],
+  "sensitivity": 22,
+  "service": "RabbitMQ AMQP TLS"
+ },
+ "5672": {
+  "advice": "启用账号并限制来源",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "RabbitMQ 消息队列",
+  "expect_proc": [
+   "beam.smp",
+   "docker-proxy"
+  ],
+  "sensitivity": 22,
+  "service": "RabbitMQ AMQP"
+ },
+ "5700": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "NPM 管理面板",
+  "expect_proc": [
+   "node",
+   "docker-proxy"
+  ],
+  "sensitivity": 30,
+  "service": "Nginx Proxy Manager"
+ },
+ "5858": {
+  "advice": "关闭",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "旧版 Node 调试端口",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "Node 旧版调试"
+ },
+ "5900": {
+  "advice": "仅本机监听或加隧道",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "VNC 远程桌面（常无认证）",
+  "expect_proc": [
+   "x11vnc",
+   "vncserver"
+  ],
+  "sensitivity": 30,
+  "service": "VNC"
+ },
+ "5901": {
+  "advice": "仅本机监听",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "第二个 VNC 桌面",
+  "expect_proc": [
+   "x11vnc",
+   "vncserver"
+  ],
+  "sensitivity": 30,
+  "service": "VNC :1"
+ },
+ "5902": {
+  "advice": "仅本机监听",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "第三个 VNC 桌面",
+  "expect_proc": [
+   "x11vnc",
+   "vncserver"
+  ],
+  "sensitivity": 30,
+  "service": "VNC :2"
+ },
+ "5984": {
+  "advice": "启用管理员口令",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "CouchDB HTTP 接口",
+  "expect_proc": [
+   "beam.smp",
+   "couchdb"
+  ],
+  "sensitivity": 35,
+  "service": "CouchDB"
+ },
+ "5985": {
+  "advice": "改用 5986",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "Windows 远程管理",
+  "expect_proc": [
+   "winrm"
+  ],
+  "sensitivity": 30,
+  "service": "WinRM HTTP"
+ },
+ "5986": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "Windows 加密远程管理",
+  "expect_proc": [
+   "winrm"
+  ],
+  "sensitivity": 30,
+  "service": "WinRM HTTPS"
+ },
+ "6006": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "训练可视化面板",
+  "expect_proc": [
+   "tensorboard",
+   "python"
+  ],
+  "sensitivity": 18,
+  "service": "TensorBoard"
+ },
+ "6080": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "浏览器版 VNC 入口",
+  "expect_proc": [
+   "python",
+   "websockify"
+  ],
+  "sensitivity": 30,
+  "service": "noVNC"
+ },
+ "6081": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "remote",
+  "desc": "浏览器版 VNC 备用端口",
+  "expect_proc": [
+   "python",
+   "websockify"
+  ],
+  "sensitivity": 30,
+  "service": "noVNC (备用)"
+ },
+ "61616": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "ActiveMQ 消息端口",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 22,
+  "service": "ActiveMQ"
+ },
+ "631": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "other",
+  "desc": "CUPS 打印服务",
+  "expect_proc": [
+   "cupsd"
+  ],
+  "sensitivity": 15,
+  "service": "IPP 打印"
+ },
+ "6333": {
+  "advice": "启用 API Key",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "向量数据库 HTTP 接口",
+  "expect_proc": [
+   "qdrant"
+  ],
+  "sensitivity": 18,
+  "service": "Qdrant"
+ },
+ "6379": {
+  "advice": "必须设置密码并禁止公网访问",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Redis 缓存/消息，无认证时极易被写入",
+  "expect_proc": [
+   "redis-server",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "Redis"
+ },
+ "6380": {
+  "advice": "确认是否需要对外监听",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Redis 第二个实例常用端口",
+  "expect_proc": [
+   "redis-server"
+  ],
+  "sensitivity": 35,
+  "service": "Redis (备用)"
+ },
+ "6432": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "PostgreSQL 连接池",
+  "expect_proc": [
+   "pgbouncer"
+  ],
+  "sensitivity": 35,
+  "service": "PgBouncer"
+ },
+ "6443": {
+  "advice": "限制来源并启用 RBAC",
+  "auth_score": 10,
+  "category": "container",
+  "desc": "K8s 控制面入口",
+  "expect_proc": [
+   "kube-apiserver"
+  ],
+  "sensitivity": 30,
+  "service": "Kubernetes API"
+ },
+ "6690": {
+  "advice": "确认来源范围",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "群晖同步服务端口（第三方套件常见）",
+  "expect_proc": [
+   "syncd"
+  ],
+  "sensitivity": 25,
+  "service": "Synology Drive"
+ },
+ "6800": {
+  "advice": "设置 RPC 密钥",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Aria2 下载 RPC",
+  "expect_proc": [
+   "aria2c"
+  ],
+  "sensitivity": 6,
+  "service": "Aria2 RPC"
+ },
+ "6881": {
+  "advice": "注意版权与带宽",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "BT 下载端口",
+  "expect_proc": [
+   "qbittorrent",
+   "transmission"
+  ],
+  "sensitivity": 6,
+  "service": "BitTorrent"
+ },
+ "69": {
+  "advice": "仅在需要时临时开启",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "TFTP 无认证文件传输",
+  "expect_proc": [
+   "in.tftpd",
+   "tftpd"
+  ],
+  "sensitivity": 25,
+  "service": "TFTP"
+ },
+ "7000": {
+  "advice": "仅集群内网",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Redis 集群节点通信",
+  "expect_proc": [
+   "redis-server"
+  ],
+  "sensitivity": 35,
+  "service": "Redis Cluster Bus"
+ },
+ "7080": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "LiteSpeed Web 管理",
+  "expect_proc": [
+   "litespeed"
+  ],
+  "sensitivity": 30,
+  "service": "LiteSpeed 面板"
+ },
+ "7359": {
+  "advice": "仅在需要投屏时开启",
+  "auth_score": 0,
+  "category": "media",
+  "desc": "DLNA 设备发现（UDP）",
+  "expect_any": true,
+  "expect_proc": [
+   "trim-media"
+  ],
+  "sensitivity": 6,
+  "service": "DLNA 发现"
+ },
+ "7474": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Neo4j 浏览器接口",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 35,
+  "service": "Neo4j HTTP"
+ },
+ "7687": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Neo4j Bolt 协议",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 35,
+  "service": "Neo4j Bolt"
+ },
+ "7700": {
+  "advice": "启用 Master Key",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "轻量搜索引擎",
+  "expect_proc": [
+   "meilisearch"
+  ],
+  "sensitivity": 18,
+  "service": "Meilisearch"
+ },
+ "7777": {
+  "advice": "按需开放",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "沙盒/生存游戏常用端口",
+  "expect_proc": [
+   "TerrariaServer",
+   "ShooterGame"
+  ],
+  "sensitivity": 6,
+  "service": "Terraria / ARK"
+ },
+ "7860": {
+  "advice": "启用认证或限制来源",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "Gradio 推理界面，常直接暴露模型能力",
+  "expect_proc": [
+   "python",
+   "python3"
+  ],
+  "sensitivity": 18,
+  "service": "Gradio"
+ },
+ "7878": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "电影自动化管理",
+  "expect_proc": [
+   "Radarr"
+  ],
+  "sensitivity": 6,
+  "service": "Radarr"
+ },
+ "7890": {
+  "advice": "仅本机或内网",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "Clash 混合代理端口",
+  "expect_proc": [
+   "clash",
+   "mihomo"
+  ],
+  "sensitivity": 18,
+  "service": "Clash"
+ },
+ "7891": {
+  "advice": "仅本机或内网",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "Clash SOCKS 端口",
+  "expect_proc": [
+   "clash",
+   "mihomo"
+  ],
+  "sensitivity": 18,
+  "service": "Clash (SOCKS)"
+ },
+ "80": {
+  "advice": "跳转到 HTTPS",
+  "auth_score": 0,
+  "category": "web",
+  "desc": "明文 Web 服务入口",
+  "expect_any": true,
+  "expect_proc": [
+   "nginx",
+   "httpd",
+   "apache2",
+   "openresty"
+  ],
+  "sensitivity": 12,
+  "service": "HTTP"
+ },
+ "8000": {
+  "advice": "临时服务用完即关",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见开发/临时 Web 端口",
+  "expect_proc": [
+   "python",
+   "node",
+   "nginx"
+  ],
+  "sensitivity": 12,
+  "service": "HTTP (开发)"
+ },
+ "8001": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "python",
+   "node",
+   "nginx"
+  ],
+  "sensitivity": 12,
+  "service": "HTTP (备用)"
+ },
+ "8005": {
+  "advice": "系统服务，保持默认",
+  "auth_score": 0,
+  "category": "media",
+  "desc": "飞牛影视媒体服务",
+  "expect_any": true,
+  "expect_proc": [
+   "trim-media"
+  ],
+  "sensitivity": 6,
+  "service": "fnOS 影视服务"
+ },
+ "8006": {
+  "advice": "限制来源地址",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "PVE 虚拟化管理面板",
+  "expect_proc": [
+   "pveproxy"
+  ],
+  "sensitivity": 30,
+  "service": "Proxmox VE"
+ },
+ "8008": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "8009": {
+  "advice": "按需开启",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Google Cast 投屏端口",
+  "expect_proc": [
+   "chrome"
+  ],
+  "sensitivity": 6,
+  "service": "Chromecast"
+ },
+ "8080": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "最常见的备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "java",
+   "node",
+   "python"
+  ],
+  "sensitivity": 12,
+  "service": "HTTP (备用)"
+ },
+ "8081": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "8082": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "8083": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "VestaCP 面板",
+  "expect_proc": [
+   "vesta-nginx"
+  ],
+  "sensitivity": 30,
+  "service": "VestaCP"
+ },
+ "8086": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "InfluxDB HTTP API",
+  "expect_proc": [
+   "influxd",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "InfluxDB"
+ },
+ "8088": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "8089": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Splunk 管理端口",
+  "expect_proc": [
+   "splunkd"
+  ],
+  "sensitivity": 12,
+  "service": "Splunk"
+ },
+ "8096": {
+  "advice": "启用账号认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "媒体服务器 Web 端口",
+  "expect_any": true,
+  "expect_proc": [
+   "jellyfin",
+   "emby",
+   "docker-proxy"
+  ],
+  "sensitivity": 6,
+  "service": "Jellyfin / Emby"
+ },
+ "81": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 HTTP 端口",
+  "expect_proc": [
+   "nginx",
+   "apache2"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "8118": {
+  "advice": "限制来源",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "Privoxy 过滤代理",
+  "expect_proc": [
+   "privoxy"
+  ],
+  "sensitivity": 18,
+  "service": "Privoxy"
+ },
+ "8123": {
+  "advice": "启用用户密码",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "ClickHouse HTTP 接口（也常被 HomeAssistant 使用）",
+  "expect_proc": [
+   "clickhouse-server"
+  ],
+  "sensitivity": 35,
+  "service": "ClickHouse HTTP"
+ },
+ "8125": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "指标聚合（UDP）",
+  "expect_proc": [
+   "statsd"
+  ],
+  "sensitivity": 12,
+  "service": "StatsD"
+ },
+ "8161": {
+  "advice": "修改默认口令",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "ActiveMQ Web 管理",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 22,
+  "service": "ActiveMQ 控制台"
+ },
+ "8188": {
+  "advice": "启用认证或限制来源",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "ComfyUI 绘图工作流界面",
+  "expect_proc": [
+   "python",
+   "python3"
+  ],
+  "sensitivity": 18,
+  "service": "ComfyUI"
+ },
+ "8200": {
+  "advice": "严格限制来源",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "HashiCorp Vault",
+  "expect_proc": [
+   "vault"
+  ],
+  "sensitivity": 22,
+  "service": "Vault"
+ },
+ "8211": {
+  "advice": "设置管理员密码",
+  "auth_score": 10,
+  "category": "game",
+  "desc": "幻兽帕鲁服务端（UDP）",
+  "expect_proc": [
+   "PalServer"
+  ],
+  "sensitivity": 6,
+  "service": "Palworld"
+ },
+ "8265": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "Ray 集群面板",
+  "expect_proc": [
+   "ray"
+  ],
+  "sensitivity": 18,
+  "service": "Ray Dashboard"
+ },
+ "8388": {
+  "advice": "使用强密码与 AEAD 加密",
+  "auth_score": 0,
+  "category": "vpn",
+  "desc": "Shadowsocks 加密代理",
+  "expect_proc": [
+   "ss-server",
+   "shadowsocks"
+  ],
+  "sensitivity": 18,
+  "service": "Shadowsocks"
+ },
+ "8443": {
+  "advice": "确认证书与访问范围",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "最常见的备用 HTTPS 端口",
+  "expect_proc": [
+   "nginx",
+   "java",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "HTTPS (备用)"
+ },
+ "8500": {
+  "advice": "启用 ACL",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Consul HTTP API/UI",
+  "expect_proc": [
+   "consul"
+  ],
+  "sensitivity": 22,
+  "service": "Consul"
+ },
+ "8501": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "Streamlit 数据应用",
+  "expect_proc": [
+   "streamlit",
+   "python"
+  ],
+  "sensitivity": 18,
+  "service": "Streamlit"
+ },
+ "8600": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Consul DNS 接口",
+  "expect_proc": [
+   "consul"
+  ],
+  "sensitivity": 22,
+  "service": "Consul DNS"
+ },
+ "8686": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "音乐自动化管理",
+  "expect_proc": [
+   "Lidarr"
+  ],
+  "sensitivity": 6,
+  "service": "Lidarr"
+ },
+ "873": {
+  "advice": "启用认证并限制来源",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "rsync 同步服务",
+  "expect_proc": [
+   "rsync"
+  ],
+  "sensitivity": 25,
+  "service": "rsync"
+ },
+ "875": {
+  "advice": "仅内网使用",
+  "auth_score": 10,
+  "category": "fileshare",
+  "desc": "NFS 配额服务",
+  "expect_proc": [
+   "rpc.rquotad"
+  ],
+  "sensitivity": 25,
+  "service": "rquotad"
+ },
+ "8787": {
+  "advice": "确认应用身份与访问范围",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "飞牛第三方应用常用自定义端口",
+  "expect_proc": [
+   "python",
+   "python3"
+  ],
+  "sensitivity": 12,
+  "service": "第三方应用 Web"
+ },
+ "8883": {
+  "advice": "确认证书",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "MQTT 加密接入",
+  "expect_proc": [
+   "mosquitto"
+  ],
+  "sensitivity": 22,
+  "service": "MQTT TLS"
+ },
+ "8888": {
+  "advice": "修改默认路径并启用强口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "宝塔面板默认端口",
+  "expect_proc": [
+   "python",
+   "bt"
+  ],
+  "sensitivity": 30,
+  "service": "宝塔面板"
+ },
+ "8889": {
+  "advice": "设置 token/密码",
+  "auth_score": 10,
+  "category": "ai",
+  "desc": "Jupyter Notebook，可执行任意代码",
+  "expect_proc": [
+   "jupyter",
+   "jupyter-lab"
+  ],
+  "sensitivity": 18,
+  "service": "Jupyter"
+ },
+ "8920": {
+  "advice": "确认证书",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "Jellyfin 加密端口",
+  "expect_proc": [
+   "jellyfin"
+  ],
+  "sensitivity": 6,
+  "service": "Jellyfin HTTPS"
+ },
+ "8983": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Solr 搜索服务",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 35,
+  "service": "Solr"
+ },
+ "8989": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "剧集自动化管理",
+  "expect_proc": [
+   "Sonarr"
+  ],
+  "sensitivity": 6,
+  "service": "Sonarr"
+ },
+ "9000": {
+  "advice": "按实际服务确认",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "ClickHouse 原生协议端口（也常被 Portainer 使用）",
+  "expect_proc": [
+   "clickhouse-server"
+  ],
+  "sensitivity": 35,
+  "service": "ClickHouse Native"
+ },
+ "9001": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "MQTT over WebSocket",
+  "expect_proc": [
+   "mosquitto"
+  ],
+  "sensitivity": 22,
+  "service": "MQTT WebSocket"
+ },
+ "9002": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "9042": {
+  "advice": "仅集群内网互通",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "Cassandra CQL 端口",
+  "expect_proc": [
+   "cassandra",
+   "java"
+  ],
+  "sensitivity": 35,
+  "service": "Cassandra"
+ },
+ "9080": {
+  "advice": "确认是否为预期服务",
+  "auth_score": 10,
+  "category": "web",
+  "desc": "常见备用 Web 端口",
+  "expect_proc": [
+   "nginx",
+   "node"
+  ],
+  "sensitivity": 12,
+  "service": "Web (备用)"
+ },
+ "9090": {
+  "advice": "启用认证或限制来源",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Prometheus 与部分面板使用",
+  "expect_proc": [
+   "prometheus",
+   "nginx"
+  ],
+  "sensitivity": 12,
+  "service": "Web (Prometheus)"
+ },
+ "9091": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Prometheus 推送网关",
+  "expect_proc": [
+   "pushgateway"
+  ],
+  "sensitivity": 12,
+  "service": "Pushgateway"
+ },
+ "9092": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Kafka Broker 端口",
+  "expect_proc": [
+   "java",
+   "docker-proxy"
+  ],
+  "sensitivity": 22,
+  "service": "Kafka"
+ },
+ "9093": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "Kafka 控制器端口",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 22,
+  "service": "Kafka Controller"
+ },
+ "9100": {
+  "advice": "限制抓取来源",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "主机指标暴露接口，信息量大",
+  "expect_proc": [
+   "node_exporter"
+  ],
+  "sensitivity": 12,
+  "service": "node_exporter"
+ },
+ "9113": {
+  "advice": "限制来源",
+  "auth_score": 10,
+  "category": "monitor",
+  "desc": "Nginx 指标导出",
+  "expect_proc": [
+   "nginx_exporter"
+  ],
+  "sensitivity": 12,
+  "service": "nginx_exporter"
+ },
+ "9200": {
+  "advice": "启用安全认证，禁止公网",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "ES HTTP 接口，历史上多次出现未授权访问",
+  "expect_proc": [
+   "java",
+   "docker-proxy"
+  ],
+  "sensitivity": 35,
+  "service": "Elasticsearch"
+ },
+ "9229": {
+  "advice": "生产环境务必关闭",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "Node 调试端口，可直接执行代码",
+  "expect_proc": [
+   "node"
+  ],
+  "sensitivity": 15,
+  "service": "Node Inspector"
+ },
+ "9300": {
+  "advice": "仅集群内网互通",
+  "auth_score": 10,
+  "category": "database",
+  "desc": "ES 节点间通信端口",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 35,
+  "service": "Elasticsearch Transport"
+ },
+ "9411": {
+  "advice": "仅内网",
+  "auth_score": 10,
+  "category": "middleware",
+  "desc": "链路追踪收集器",
+  "expect_proc": [
+   "java"
+  ],
+  "sensitivity": 22,
+  "service": "Zipkin"
+ },
+ "9418": {
+  "advice": "改用 SSH/HTTPS",
+  "auth_score": 10,
+  "category": "dev",
+  "desc": "Git 明文协议服务",
+  "expect_proc": [
+   "git"
+  ],
+  "sensitivity": 15,
+  "service": "git daemon"
+ },
+ "9443": {
+  "advice": "启用强口令",
+  "auth_score": 10,
+  "category": "panel",
+  "desc": "Portainer 容器管理面板",
+  "expect_proc": [
+   "portainer",
+   "docker-proxy"
+  ],
+  "sensitivity": 30,
+  "service": "Portainer (HTTPS)"
+ },
+ "9696": {
+  "advice": "启用认证",
+  "auth_score": 10,
+  "category": "media",
+  "desc": "索引器管理",
+  "expect_proc": [
+   "Prowlarr"
+  ],
+  "sensitivity": 6,
+  "service": "Prowlarr"
+ }
+}
