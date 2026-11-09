@@ -223,6 +223,21 @@ class TestControl(unittest.TestCase):
         self.assertFalse(out["ok"])
 
 
+class TestStore(unittest.TestCase):
+    def test_alias_roundtrip(self):
+        tmp = tempfile.mkdtemp(prefix="pgstore-")
+        store = pg_store.Store(tmp)
+        store.set_label(8080, "tcp", "自己写的服务", False, "我的博客 API")
+        got = store.labels()[(8080, "tcp")]
+        self.assertEqual(got["alias"], "我的博客 API")
+        self.assertEqual(got["note"], "自己写的服务")
+        # reopening keeps the value (persisted, not cached in memory)
+        again = pg_store.Store(tmp)
+        self.assertEqual(again.labels()[(8080, "tcp")]["alias"], "我的博客 API")
+        again.set_label(8080, "tcp", "", False, "")
+        self.assertEqual(again.labels()[(8080, "tcp")]["alias"], "")
+
+
 class FakeCore(object):
     def __init__(self, data_dir):
         self.app_dir = APP

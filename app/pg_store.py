@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS event (
 CREATE INDEX IF NOT EXISTS idx_event_ts ON event(ts DESC);
 CREATE TABLE IF NOT EXISTS label (
   port INTEGER, proto TEXT, note TEXT, accepted INTEGER DEFAULT 0,
+  alias TEXT DEFAULT '',
   PRIMARY KEY (port, proto)
 );
 CREATE TABLE IF NOT EXISTS metric (
@@ -42,7 +43,21 @@ class Store(object):
                 self.db.execute("PRAGMA journal_mode=WAL")
             except sqlite3.Error:
                 pass
+            self._migrate()
             self.db.commit()
+
+    def _migrate(self):
+        """Add columns introduced after the first release."""
+        try:
+            cols = {row["name"] for row in
+                    self.db.execute("PRAGMA table_info(label)").fetchall()}
+        except sqlite3.Error:
+            return
+        if "alias" not in cols:
+            try:
+                self.db.execute("ALTER TABLE label ADD COLUMN alias TEXT DEFAULT ''")
+            except sqlite3.Error:
+                pass
 
     def _open(self, path):
         """Open the database; move a corrupt file aside instead of refusing to start."""
@@ -163,17 +178,21 @@ class Store(object):
     # ---------------------------------------------------------------- labels
     def labels(self):
         with self.lock:
-            rows = self.db.execute("SELECT port,proto,note,accepted FROM label").fetchall()
-        return {(r["port"], r["proto"]): {"note": r["note"] or "",
-                                          "accepted": bool(r["accepted"])} for r in rows}
+            rows = self.db.execute(
+                "SELECT port,proto,note,accepted,alias FROM label").fetchall()
+        return {(r["port"], r["proto"]): {
+            "note": r["note"] or "",
+            "accepted": bool(r["accepted"]),
+            "alias": (r["alias"] or "") if "alias" in r.keys() else "",
+        } for r in rows}
 
-    def set_label(self, port, proto, note="", accepted=False):
+    def set_label(self, port, proto, note="", accepted=False, alias=""):
         with self.lock:
             self.db.execute(
-                "INSERT INTO label(port,proto,note,accepted) VALUES(?,?,?,?) "
+                "INSERT INTO label(port,proto,note,accepted,alias) VALUES(?,?,?,?,?) "
                 "ON CONFLICT(port,proto) DO UPDATE SET note=excluded.note,"
-                "accepted=excluded.accepted",
-                (int(port), proto, note or "", 1 if accepted else 0),
+                "accepted=excluded.accepted,alias=excluded.alias",
+                (int(port), proto, note or "", 1 if accepted else 0, alias or ""),
             )
             self.db.commit()
 

@@ -29,7 +29,7 @@ import pg_net
 import pg_server
 import pg_store
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 LOG_PREFIX = "[portguard]"
 
 
@@ -77,6 +77,11 @@ class Core(object):
                     if item:
                         rec["note"] = item["note"]
                         rec["accepted"] = item["accepted"]
+                        rec["alias"] = item.get("alias", "")
+                    else:
+                        rec["alias"] = ""
+                    rec["display_name"] = rec["alias"] or rec["service"]
+                    rec["has_alias"] = bool(rec["alias"])
 
                 overview["degraded"] = self.degraded
                 overview["interval"] = int(self.cfg.get("interval", 10))
