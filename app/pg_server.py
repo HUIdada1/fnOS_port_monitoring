@@ -2,7 +2,6 @@
 """Embedded HTTP server: JSON API + single-page UI + session auth."""
 
 import csv
-import hmac
 import io
 import ipaddress
 import json
@@ -35,10 +34,21 @@ class Sessions(object):
         self._lock = threading.Lock()
         self._attempts = {}
 
+    def _prune(self, now):
+        for token, exp in list(self._tokens.items()):
+            if exp < now:
+                self._tokens.pop(token, None)
+        if len(self._attempts) > 512:
+            for ip, bucket in list(self._attempts.items()):
+                if not bucket or now - bucket[-1] > 600:
+                    self._attempts.pop(ip, None)
+
     def issue(self):
         token = secrets.token_urlsafe(32)
+        now = time.time()
         with self._lock:
-            self._tokens[token] = time.time() + SESSION_TTL
+            self._prune(now)
+            self._tokens[token] = now + SESSION_TTL
         return token
 
     def valid(self, token):
@@ -102,6 +112,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; "
+            "connect-src 'self'; frame-ancestors 'self'",
+        )
         for key, value in (extra or {}).items():
             self.send_header(key, value)
         self.end_headers()
@@ -126,10 +143,14 @@ class Handler(BaseHTTPRequestHandler):
             return {}
 
     def _static(self, relpath):
-        ui_dir = os.path.join(self.core.app_dir, "ui")
+        ui_dir = os.path.abspath(os.path.join(self.core.app_dir, "ui"))
         safe = os.path.normpath(relpath).lstrip("/\\")
-        full = os.path.join(ui_dir, safe)
-        if not os.path.abspath(full).startswith(os.path.abspath(ui_dir)):
+        full = os.path.abspath(os.path.join(ui_dir, safe))
+        try:
+            inside = os.path.commonpath([ui_dir, full]) == ui_dir
+        except ValueError:
+            inside = False
+        if not inside:
             return self._send(403, "forbidden", "text/plain; charset=utf-8")
         if not os.path.isfile(full):
             return self._send(404, "not found", "text/plain; charset=utf-8")
@@ -146,11 +167,22 @@ class Handler(BaseHTTPRequestHandler):
             ctype = "application/javascript; charset=utf-8"
         with open(full, "rb") as fh:
             data = fh.read()
-        extra = {"Cache-Control": "no-cache"}
-        self._send(200, data, ctype, extra)
+        self._send(200, data, ctype)
 
     # ------------------------------------------------------------------ routes
     def do_GET(self):
+        try:
+            self._handle_get()
+        except Exception as exc:  # never leak a traceback to the client
+            self._json({"error": "internal error", "detail": str(exc)[:200]}, 500)
+
+    def do_POST(self):
+        try:
+            self._handle_post()
+        except Exception as exc:
+            self._json({"error": "internal error", "detail": str(exc)[:200]}, 500)
+
+    def _handle_get(self):
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
@@ -190,7 +222,11 @@ class Handler(BaseHTTPRequestHandler):
                 state = self.core.get_state()
                 return self._json(state)
             if path == "/api/timeline":
-                limit = int((query.get("limit") or ["120"])[0])
+                try:
+                    limit = int((query.get("limit") or ["120"])[0])
+                except (TypeError, ValueError):
+                    limit = 120
+                limit = max(1, min(limit, 1000))
                 return self._json({"events": self.core.store.timeline(limit)})
             if path == "/api/kb":
                 return self._json({"kb": self.core.kb})
@@ -198,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
 
         return self._send(404, "not found", "text/plain; charset=utf-8")
 
-    def do_POST(self):
+    def _handle_post(self):
         parsed = urlparse(self.path)
         path = parsed.path
         ip = self.client_address[0]
@@ -219,6 +255,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/setup":
             if self.core.cfg.get("password"):
                 return self._json({"error": "已完成初始化"}, 403)
+            if not self.core.sessions.throttle(ip):
+                return self._json({"error": "尝试过于频繁，请稍后再试"}, 429)
             if not _is_local(ip) or time.time() - self.core.started > 1800:
                 return self._json({"error": "初始化窗口已关闭，请在 NAS 本机或 30 分钟内完成设置"}, 403)
             data = self._body_json()
