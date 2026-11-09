@@ -17,6 +17,17 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def manifest_version():
+    try:
+        with open(os.path.join(ROOT, "manifest"), "r", encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip().startswith("version"):
+                    return line.split("=", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return "0.0.0"
+
+
 def find_fnpack(explicit=None):
     candidates = []
     if explicit:
@@ -86,7 +97,13 @@ def main():
         print("构建结束但未找到 portguard.fpk")
         return 1
 
-    print("完成：%s（%.1f KB）" % (output, os.path.getsize(output) / 1024.0))
+    version = manifest_version()
+    named = os.path.join(ROOT, "portguard-%s.fpk" % version)
+    if os.path.exists(named):
+        os.remove(named)
+    os.replace(output, named)
+
+    print("完成：%s（%.1f KB）" % (named, os.path.getsize(named) / 1024.0))
     return 0
 
 

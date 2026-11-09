@@ -22,17 +22,27 @@
 
 ## 界面
 
+浅色毛玻璃。打开先是**应用视图**，端口矩阵在第二个标签。
+
+按应用聚合，卡片名过长会省略，鼠标悬停看全名；点卡片弹出该应用的端口清单，里面每个端口都有内外连接数和风险：
+
+![应用视图](assets/screenshot-apps.png)
+
 端口矩阵，按风险排序：
 
 ![端口矩阵](assets/screenshot-matrix.png)
 
-按应用聚合：
-
-![应用视图](assets/screenshot-apps.png)
-
-点任意一行看证据链：进程路径、cgroup、容器、内外连接数、nft 计数器、处置建议。
+点任意一行或卡片里的端口，弹出详情：使用情况、判定依据、归属路径、快捷入口、改名、备注、端口控制。
 
 ![端口详情](assets/screenshot-detail.png)
+
+右上角有版本号、作者沐晖和 GitHub 项目主页入口。
+
+### 自定义名称
+
+自己的项目不想只靠一个端口号认，可以在详情里给它改名，比如把 8787 叫「我的博客 API」。名称、备注和「已接受」标记都存本机 SQLite，重启、升级都不会丢；列表里有「已改名」筛选，卡片和矩阵里也会带上标记。清除名称就恢复知识库识别出的服务名。
+
+Web 类服务会自动生成快捷入口（`http(s)://当前主机:端口`），非 Web 服务可以复制程序路径。
 
 ## 判定方式
 
@@ -122,10 +132,10 @@ curl -L -o tools/fnpack "https://static2.fnnas.com/fnpack/fnpack-1.2.3-linux-amd
 chmod +x tools/fnpack
 
 python3 scripts/build.py
-# 产物 portguard.fpk
+# 产物 portguard-1.3.0.fpk
 ```
 
-`scripts/build.py` 会先清掉 `__pycache__` 再打包，避免把本地的 `.pyc` 带进去。
+`scripts/build.py` 会先清掉 `__pycache__` 再打包，并按 manifest 里的版本给产物加后缀，所以每次发版的包名都带版本号，不会互相覆盖。
 
 manifest 里写的是 `platform = all`。fnpack 1.2.3 接受这个值；如果你用的版本报错，把 `platform` 改成 `x86` 或 `arm` 分开构建。代码是纯 Python，没有二进制依赖。
 
@@ -158,12 +168,13 @@ sudo strace -f -p $(cat /var/apps/portguard/var/run/portguard.pid) \
 - 容器内进程名依赖 `nsenter`。distroless 之类的镜像读不到进程名，只能确认端口在监听。
 - 端口控制走 `appcenter-cli` 的语义，个别应用如果带自动重启策略，停掉后可能被拉起来。
 - 时间线只记录端口开合、状态变化和控制动作，趋势图还没做。
+- 毛玻璃依赖 `backdrop-filter`，老浏览器会退化成普通半透明面板，功能不受影响。
 - ARM 没在实机上验证过。
 
 ## 开发
 
 ```bash
-python3 tests/smoke.py      # 23 项：地址解析、状态机、冲突、归因、控制白名单、网关前缀、鉴权
+python3 tests/smoke.py      # 24 项：地址解析、状态机、冲突、归因、控制白名单、网关前缀、别名持久化、鉴权
 python3 tests/fpk_check.py  # 包结构、manifest 与 ui/config 的一致性
 ```
 

@@ -301,10 +301,14 @@ class Handler(BaseHTTPRequestHandler):
             except (TypeError, ValueError):
                 return self._json({"error": "bad port"}, 400)
             proto = data.get("proto") or "tcp"
-            self.core.store.set_label(port, proto, data.get("note", ""),
-                                      bool(data.get("accepted")))
+            if proto not in ("tcp", "udp"):
+                return self._json({"error": "bad proto"}, 400)
+            alias = (data.get("alias") or "").strip()[:60]
+            note = (data.get("note") or "").strip()[:200]
+            self.core.store.set_label(port, proto, note,
+                                      bool(data.get("accepted")), alias)
             self.core.refresh(force=False)
-            return self._json({"ok": True})
+            return self._json({"ok": True, "alias": alias})
 
         return self._json({"error": "not found"}, 404)
 
