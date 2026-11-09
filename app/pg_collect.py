@@ -3,7 +3,6 @@
 
 import os
 import socket
-import struct
 import time
 
 TCP_LISTEN = "0A"

@@ -67,7 +67,13 @@ def load(data_dir: str) -> dict:
             saved = json.load(fh)
         if isinstance(saved, dict):
             cfg.update({k: v for k, v in saved.items() if k in DEFAULTS})
-    except Exception:
+    except ValueError:
+        # keep the broken file for diagnosis instead of silently overwriting it
+        try:
+            os.replace(path, "%s.bad-%d" % (path, int(time.time())))
+        except OSError:
+            pass
+    except OSError:
         pass
     return cfg
 

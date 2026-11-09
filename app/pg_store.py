@@ -35,8 +35,7 @@ class Store(object):
         os.makedirs(data_dir, exist_ok=True)
         self.path = os.path.join(data_dir, "portguard.db")
         self.lock = threading.Lock()
-        self.db = sqlite3.connect(self.path, check_same_thread=False)
-        self.db.row_factory = sqlite3.Row
+        self.db = self._open(self.path)
         with self.lock:
             self.db.executescript(SCHEMA)
             try:
@@ -44,6 +43,30 @@ class Store(object):
             except sqlite3.Error:
                 pass
             self.db.commit()
+
+    def _open(self, path):
+        """Open the database; move a corrupt file aside instead of refusing to start."""
+        try:
+            db = sqlite3.connect(path, check_same_thread=False)
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA schema_version").fetchone()
+            return db
+        except sqlite3.DatabaseError:
+            try:
+                db.close()
+            except Exception:
+                pass
+            backup = "%s.corrupt-%d" % (path, int(time.time()))
+            try:
+                os.replace(path, backup)
+                for suffix in ("-wal", "-shm"):
+                    if os.path.exists(path + suffix):
+                        os.replace(path + suffix, backup + suffix)
+            except OSError:
+                pass
+            db = sqlite3.connect(path, check_same_thread=False)
+            db.row_factory = sqlite3.Row
+            return db
 
     # ---------------------------------------------------------------- snapshot
     def previous(self):

@@ -3,6 +3,7 @@
 
 import json
 import os
+import time
 from collections import deque
 
 import pg_apps
@@ -153,8 +154,15 @@ def _resolve(sock, apps, docker, dnat_rule):
             "container": "", "image": ""}
 
 
+def _to_int(value, default):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _risk(exposure_score, sensitivity, auth):
-    score = exposure_score + int(sensitivity or 20) + int(auth)
+    score = exposure_score + _to_int(sensitivity, 20) + _to_int(auth, 10)
     score = max(0, min(100, score))
     if score >= 70:
         level = "high"
@@ -193,6 +201,8 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None):
                 ghosts.append((port, "tcp", "soft", []))
 
     records = []
+    peek_started = time.time()
+    peek_budget = 2.5
     for (port, proto), socks in groups.items():
         kb_entry = kb_lookup(kb, port)
         addrs = sorted({s["ip"] for s in socks})
@@ -253,7 +263,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None):
         inner_proc = ""
         inner_ports = []
         inner_verified = False
-        if owner["kind"] == "docker" and rule:
+        if owner["kind"] == "docker" and rule and (time.time() - peek_started) < peek_budget:
             cinfo = docker.get("by_name", {}).get(owner["container"]) or {}
             inner = pg_apps.container_listeners(cinfo.get("pid", 0))
             inner_ports = sorted(inner["ports"])
