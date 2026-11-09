@@ -283,6 +283,25 @@ class Handler(BaseHTTPRequestHandler):
             self.core.refresh(force=True)
             return self._json({"ok": True})
 
+        if path == "/api/action":
+            if self.headers.get("X-Requested-With") != "portguard":
+                return self._json({"ok": False, "message": "请求来源校验失败"}, 403)
+            data = self._body_json()
+            action = (data.get("action") or "").strip()
+            if action not in ("start", "stop"):
+                return self._json({"ok": False, "message": "不支持的操作"}, 400)
+            if data.get("confirm") != action:
+                return self._json({"ok": False, "message": "缺少确认，操作未执行"}, 400)
+            try:
+                port = int(data.get("port"))
+            except (TypeError, ValueError):
+                return self._json({"ok": False, "message": "端口参数错误"}, 400)
+            proto = (data.get("proto") or "tcp").lower()
+            if proto not in ("tcp", "udp"):
+                return self._json({"ok": False, "message": "协议参数错误"}, 400)
+            result = self.core.act(port, proto, action)
+            return self._json(result, 200 if result.get("ok") else 400)
+
         if path == "/api/label":
             data = self._body_json()
             try:

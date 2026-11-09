@@ -253,6 +253,18 @@ tbody tr:last-child td{border-bottom:none}
   font-size:12px;opacity:0;pointer-events:none;transition:.22s;z-index:90}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ---------------- confirm modal ---------------- */
+.modal{position:fixed;inset:0;z-index:96;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.58);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.16s}
+.modal.on{opacity:1;pointer-events:auto}
+.modal .box{width:min(408px,92vw);background:#0b1016;border:1px solid var(--line);
+  border-radius:12px;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.modal h3{margin:0 0 7px;font-size:14px;font-weight:600}
+.modal p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn.danger{color:#fff;background:#d94456;border-color:#d94456}
+.btn.danger:hover{filter:brightness(1.07)}
+
 @media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){
   .wrap{padding:16px 14px 50px}
@@ -390,6 +402,17 @@ tbody tr:last-child td{border-bottom:none}
 
 <div class="toast" id="toast"></div>
 
+<div class="modal" id="modal">
+  <div class="box">
+    <h3 id="m-title">确认操作</h3>
+    <p id="m-text"></p>
+    <div class="row">
+      <button class="btn" id="m-cancel">取消</button>
+      <button class="btn danger" id="m-ok">确认</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -414,6 +437,7 @@ tbody tr:last-child td{border-bottom:none}
   function api(path, opts){
     opts = opts || {};
     opts.headers = opts.headers || {};
+    opts.headers["X-Requested-With"] = "portguard";
     if(opts.body && !opts.headers["Content-Type"]){
       opts.headers["Content-Type"] = "application/json";
     }
@@ -672,8 +696,20 @@ tbody tr:last-child td{border-bottom:none}
       });
       h += '</div>';
     }
+    var ctl = r.control || { allowed:false, reason:"不可控制" };
+    h += '<div class="sec"><div class="h">端口控制</div>';
+    if(ctl.allowed){
+      h += '<div class="note">控制对象：<b style="color:var(--text)">'+esc(ctl.label)+'</b>。'+
+           '停止后该端口立即关闭，正在建立的连接会中断。</div>'+
+           '<div class="actions"><button class="btn danger" id="act-stop">停止服务</button>'+
+           '<button class="btn" id="act-start">启动服务</button></div>';
+    }else{
+      h += '<div class="note">'+esc(ctl.reason || "该端口未关联可控制的服务")+'</div>';
+    }
+    h += '</div>';
+
     h += '<div class="sec"><div class="h">标注</div>'+
-      '<input id="note" placeholder="给这个端口写个备注（例如：内部测试库，暂不处理）" '+
+      '<input id="note" placeholder="给这个端口写个备注" '+
       'style="width:100%;height:32px;border-radius:7px;border:1px solid var(--line);'+
       'background:rgba(0,0,0,.25);padding:0 10px;outline:none;color:var(--text)" value="'+esc(r.note||"")+'">'+
       '<div class="actions"><button class="btn primary" id="save-note">保存</button>'+
@@ -683,6 +719,11 @@ tbody tr:last-child td{border-bottom:none}
     $("drawer").classList.add("on");
     $("scrim").classList.add("on");
 
+    if(ctl.allowed){
+      $("act-stop").addEventListener("click", function(){ askAction(r, "stop"); });
+      $("act-start").addEventListener("click", function(){ askAction(r, "start"); });
+    }
+
     $("save-note").addEventListener("click", function(){ saveLabel(r, $("note").value, r.accepted); });
     $("accept").addEventListener("click", function(){ saveLabel(r, $("note").value, !r.accepted); });
   }
@@ -691,6 +732,45 @@ tbody tr:last-child td{border-bottom:none}
     $("scrim").classList.remove("on");
     current = null;
   }
+  function confirmAction(title, text, okLabel, onOk){
+    $("m-title").textContent = title;
+    $("m-text").textContent = text;
+    $("m-ok").textContent = okLabel;
+    $("modal").classList.add("on");
+    $("m-cancel").onclick = function(){ $("modal").classList.remove("on"); };
+    $("m-ok").onclick = function(){
+      $("modal").classList.remove("on");
+      onOk();
+    };
+  }
+
+  function askAction(r, action){
+    var ctl = r.control || {};
+    var isStop = action === "stop";
+    var target = ctl.label || ("端口 " + r.port);
+    confirmAction(
+      (isStop ? "停止 " : "启动 ") + r.service,
+      "将" + (isStop ? "停止" : "启动") + " " + target + "（端口 " + r.port + "/" +
+        r.proto.toUpperCase() + "）。" +
+        (isStop ? "停止后端口关闭，正在建立的连接会断开。" : "启动后端口重新开始监听。"),
+      isStop ? "停止" : "启动",
+      function(){ doAction(r, action); }
+    );
+  }
+
+  function doAction(r, action){
+    api("/api/action", {
+      method: "POST",
+      body: JSON.stringify({ port: r.port, proto: r.proto, action: action, confirm: action })
+    }).then(function(res){
+      toast(res.message || "已执行");
+      closeDrawer();
+      return load();
+    }).catch(function(e){
+      toast(e.message || "执行失败");
+    });
+  }
+
   function saveLabel(r, note, accepted){
     api("/api/label", { method:"POST", body: JSON.stringify({port:r.port, proto:r.proto, note:note, accepted:accepted}) })
       .then(function(){ toast("已保存"); return load(); })
