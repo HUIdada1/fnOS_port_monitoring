@@ -89,14 +89,23 @@ def main():
         check(launch in entries, "desktop_applaunchname 与 ui/config 的 key 不一致")
         entry = entries.get(launch, {})
         if entry:
-            check(entry.get("port") == port,
-                  "ui/config 的 port 与 manifest service_port 不一致")
             icon = entry.get("icon", "")
             check("{0}" in icon, "ui/config icon 应使用 {0} 尺寸占位符")
             icon_dir = os.path.join(ROOT, "app", "ui", "images")
             for size in (64, 256):
                 check(os.path.isfile(os.path.join(icon_dir, "icon_%d.png" % size)),
                       "缺少图标: app/ui/images/icon_%d.png" % size)
+
+            gateway = entry.get("gatewaySocket")
+            if gateway:
+                check(entry.get("type") == "iframe", "网关模式应使用 iframe")
+                prefix = entry.get("gatewayPrefix", "")
+                check(prefix.startswith("/"), "gatewayPrefix 必须以 / 开头")
+                check(entry.get("url", "").startswith(prefix.rstrip("/") + "/"),
+                      "gateway 模式下 url 必须以 gatewayPrefix/ 开头")
+            else:
+                check(entry.get("port") == port,
+                      "ui/config 的 port 与 manifest service_port 不一致")
 
     # wizard json
     for name in ("install", "config"):

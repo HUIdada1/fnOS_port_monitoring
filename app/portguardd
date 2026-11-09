@@ -29,7 +29,7 @@ import pg_net
 import pg_server
 import pg_store
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 LOG_PREFIX = "[portguard]"
 
 
@@ -157,9 +157,12 @@ class Core(object):
                 last_prune = time.time()
 
 
-def init_config(data_dir, password=None, interval=None, bind=None, port=None):
+def init_config(data_dir, password=None, interval=None, bind=None, port=None,
+                no_password=False):
     cfg = pg_config.load(data_dir)
-    if password:
+    if no_password:
+        cfg["password"] = ""
+    elif password:
         cfg["password"] = pg_config.hash_password(password)
     if interval:
         cfg["interval"] = max(5, int(interval))
@@ -177,9 +180,11 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=0, help="listen port")
     parser.add_argument("--bind", default="", help="listen address")
     parser.add_argument("--data", default="", help="data directory")
+    parser.add_argument("--gateway-sock", default="", help="unix socket for fnOS gateway")
     parser.add_argument("--interval", type=int, default=0, help="scan interval seconds")
     parser.add_argument("--init", action="store_true", help="initialize config and exit")
     parser.add_argument("--password", default="", help="set admin password (with --init)")
+    parser.add_argument("--no-password", action="store_true", help="clear password (open access)")
     parser.add_argument("--migrate", action="store_true", help="run storage migration and exit")
     parser.add_argument("--once", action="store_true", help="print one scan as JSON and exit")
     parser.add_argument("--version", action="store_true", help="print version")
@@ -204,7 +209,7 @@ def main(argv=None):
             elif bind_local == "false":
                 bind = "0.0.0.0"
         cfg = init_config(data_dir, password, interval, bind,
-                          args.port or os.environ.get("TRIM_SERVICE_PORT"))
+                          args.port or None, no_password=args.no_password)
         log("initialized:", pg_config.config_path(data_dir), "port:", cfg["port"])
         return 0
 
@@ -213,17 +218,16 @@ def main(argv=None):
         log("storage ready")
         return 0
 
+    first_run = not os.path.exists(pg_config.config_path(data_dir))
     cfg = pg_config.load(data_dir)
     if args.port:
         cfg["port"] = args.port
-    elif os.environ.get("TRIM_SERVICE_PORT", "").isdigit():
+    elif first_run and os.environ.get("TRIM_SERVICE_PORT", "").isdigit():
         cfg["port"] = int(os.environ["TRIM_SERVICE_PORT"])
     if args.bind:
         cfg["bind"] = args.bind
     if args.interval:
         cfg["interval"] = max(5, int(args.interval))
-    if os.environ.get("WIZARD_BIND") == "true":
-        cfg["bind"] = "127.0.0.1"
 
     core = Core(APP_DIR, data_dir, cfg)
 
@@ -243,11 +247,25 @@ def main(argv=None):
     scanner = threading.Thread(target=core.scanner_loop, args=(stop_event,), daemon=True)
     scanner.start()
 
+    servers = []
     try:
-        httpd = pg_server.serve(core)
+        servers.append(("tcp", pg_server.serve(core)))
     except OSError as exc:
         log("cannot bind %s:%s -> %s" % (cfg["bind"], cfg["port"], exc))
         return 1
+
+    sock_path = args.gateway_sock
+    if not sock_path:
+        appdest = os.environ.get("TRIM_APPDEST", "")
+        if appdest:
+            sock_path = os.path.join(appdest, cfg.get("gateway_socket", "app.sock"))
+    if sock_path:
+        try:
+            servers.append(("gateway", pg_server.serve_gateway(core, sock_path)))
+            log("gateway socket:", sock_path)
+        except OSError as exc:
+            log("gateway socket unavailable (%s), TCP only" % exc)
+            sock_path = ""
 
     def _stop(signum, frame):
         log("signal", signum, "shutting down")
@@ -259,14 +277,25 @@ def main(argv=None):
     except (ValueError, OSError):
         pass
 
-    httpd.timeout = 1
+    for _, srv in servers:
+        threading.Thread(target=srv.serve_forever, kwargs={"poll_interval": 0.5},
+                         daemon=True).start()
+
     log("ready on http://%s:%d" % (cfg["bind"], cfg["port"]))
     while not stop_event.is_set():
-        httpd.handle_request()
-    try:
-        httpd.server_close()
-    except Exception:
-        pass
+        time.sleep(0.5)
+
+    for _, srv in servers:
+        try:
+            srv.shutdown()
+            srv.server_close()
+        except Exception:
+            pass
+    if sock_path:
+        try:
+            os.unlink(sock_path)
+        except OSError:
+            pass
     log("stopped")
     return 0
 

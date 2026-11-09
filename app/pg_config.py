@@ -20,6 +20,8 @@ DEFAULTS = {
     "lang": "zh",
     "show_kernel": True,
     "control_enabled": True,
+    "gateway_prefix": "/app/portguard",
+    "gateway_socket": "app.sock",
 }
 
 PBKDF2_ROUNDS = 120000

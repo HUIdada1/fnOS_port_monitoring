@@ -463,7 +463,7 @@ tbody tr:last-child td{border-bottom:none}
 
   function doGate(){
     var pwd = $("gate-pwd").value;
-    var url = S.needsSetup ? "/api/setup" : "/api/login";
+    var url = S.needsSetup ? "api/setup" : "api/login";
     $("gate-err").textContent = "";
     api(url, { method:"POST", body: JSON.stringify({password: pwd}) })
       .then(function(){ hideGate(); boot(); })
@@ -759,7 +759,7 @@ tbody tr:last-child td{border-bottom:none}
   }
 
   function doAction(r, action){
-    api("/api/action", {
+    api("api/action", {
       method: "POST",
       body: JSON.stringify({ port: r.port, proto: r.proto, action: action, confirm: action })
     }).then(function(res){
@@ -772,7 +772,7 @@ tbody tr:last-child td{border-bottom:none}
   }
 
   function saveLabel(r, note, accepted){
-    api("/api/label", { method:"POST", body: JSON.stringify({port:r.port, proto:r.proto, note:note, accepted:accepted}) })
+    api("api/label", { method:"POST", body: JSON.stringify({port:r.port, proto:r.proto, note:note, accepted:accepted}) })
       .then(function(){ toast("已保存"); return load(); })
       .then(function(){ if(current){ var f = (S.data.ports||[]).filter(function(x){
         return x.port===r.port && x.proto===r.proto; })[0]; if(f) openDrawer(f); } })
@@ -781,9 +781,9 @@ tbody tr:last-child td{border-bottom:none}
 
   /* -------------------------------- data -------------------------------- */
   function load(){
-    return api("/api/ports").then(function(d){
+    return api("api/ports").then(function(d){
       S.data = d;
-      return api("/api/timeline?limit=120").then(function(t){ S.events = t.events || []; })
+      return api("api/timeline?limit=120").then(function(t){ S.events = t.events || []; })
         .catch(function(){ S.events = []; })
         .then(function(){ render(); });
     }).catch(function(e){
@@ -854,7 +854,7 @@ tbody tr:last-child td{border-bottom:none}
 
   $("btn-refresh").addEventListener("click", function(){
     $("scan-dot").classList.add("pulse");
-    api("/api/refresh", {method:"POST"}).then(load).then(function(){
+    api("api/refresh", {method:"POST"}).then(load).then(function(){
       $("scan-dot").classList.remove("pulse"); toast("已刷新");
     }).catch(function(e){ toast(e.message); });
   });
@@ -865,7 +865,7 @@ tbody tr:last-child td{border-bottom:none}
     menu.style.top = (r.bottom+8)+"px"; menu.style.right = "24px";
     [["markdown","Markdown 报告"],["csv","CSV 表格"],["json","JSON 数据"]].forEach(function(it){
       var a = document.createElement("a");
-      a.href = "/api/export?format="+it[0];
+      a.href = "api/export?format="+it[0];
       a.textContent = it[1];
       a.style.cssText = "display:block;padding:8px 11px;border-radius:6px;color:#aab6c4;text-decoration:none;font-size:12px";
       a.onmouseenter = function(){ a.style.background="rgba(255,255,255,.05)"; a.style.color="#e8eef6"; };
@@ -878,11 +878,11 @@ tbody tr:last-child td{border-bottom:none}
     }, 0);
   });
   $("btn-logout").addEventListener("click", function(){
-    api("/api/logout", {method:"POST"}).then(function(){ location.reload(); });
+    api("api/logout", {method:"POST"}).then(function(){ location.reload(); });
   });
 
   /* -------------------------------- init -------------------------------- */
-  api("/api/session").then(function(s){
+  api("api/session").then(function(s){
     if(!s.authed){ showGate(s.needs_setup); return; }
     hideGate(); boot();
   }).catch(function(){ showGate(false); });

@@ -291,21 +291,9 @@ class TestServer(unittest.TestCase):
                 return exc.code, {"raw": body}
 
     def test_flow(self):
+        # no password configured -> open access
         status, data = self.call("/api/session")
         self.assertEqual(status, 200)
-        self.assertTrue(data["needs_setup"])
-        self.assertFalse(data["authed"])
-
-        status, data = self.call("/api/ports")
-        self.assertEqual(status, 401)
-
-        status, data = self.call("/api/setup", {"password": "123"})
-        self.assertEqual(status, 400)
-
-        status, data = self.call("/api/setup", {"password": "good-pass-123"})
-        self.assertEqual(status, 200)
-
-        status, data = self.call("/api/session")
         self.assertTrue(data["authed"])
         self.assertFalse(data["needs_setup"])
 
@@ -313,14 +301,30 @@ class TestServer(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("ports", data)
 
+        # setup endpoint is closed: password comes from the install wizard
+        status, data = self.call("/api/setup", {"password": "good-pass-123"})
+        self.assertEqual(status, 403)
+
+        # enabling a password requires auth again
+        self.core.set_password("good-pass-123")
+        self.core.sessions = pg_server.Sessions()
+        self.jar.clear()
+        status, data = self.call("/api/ports")
+        self.assertEqual(status, 401)
+
+        status, data = self.call("/api/login", {"password": "wrong"})
+        self.assertEqual(status, 401)
+        status, data = self.call("/api/login", {"password": "good-pass-123"})
+        self.assertEqual(status, 200)
+        status, data = self.call("/api/ports")
+        self.assertEqual(status, 200)
+
         status, data = self.call("/api/health")
         self.assertEqual(status, 200)
         self.assertTrue(data["ok"])
 
     def test_action_guards(self):
-        self.call("/api/setup", {"password": "good-pass-123"})
         payload = {"port": 3306, "proto": "tcp", "action": "stop", "confirm": "stop"}
-
         status, data = self.call("/api/action", payload)
         self.assertEqual(status, 403)  # missing X-Requested-With
 
@@ -338,6 +342,15 @@ class TestServer(unittest.TestCase):
         status, data = self.call("/api/action", payload, {"X-Requested-With": "portguard"})
         self.assertEqual(status, 400)
         self.assertFalse(data["ok"])
+
+    def test_gateway_prefix(self):
+        # the fnOS gateway proxies /app/portguard/* to the same handler
+        status, data = self.call("/app/portguard/api/session")
+        self.assertEqual(status, 200)
+        self.assertTrue(data["authed"])
+        status, data = self.call("/app/portguard/api/ports")
+        self.assertEqual(status, 200)
+        self.assertIn("ports", data)
 
 
 if __name__ == "__main__":
