@@ -3,10 +3,10 @@
 
 import csv
 import io
-import ipaddress
 import json
 import os
 import secrets
+import socket
 import threading
 import time
 from collections import deque
@@ -18,14 +18,6 @@ import pg_config
 
 SESSION_TTL = 12 * 3600
 MAX_BODY = 64 * 1024
-
-
-def _is_local(addr: str) -> bool:
-    try:
-        ip = ipaddress.ip_address(addr)
-    except ValueError:
-        return False
-    return ip.is_private or ip.is_loopback
 
 
 class Sessions(object):
@@ -101,7 +93,20 @@ class Handler(BaseHTTPRequestHandler):
         return {k: v.value for k, v in jar.items()}
 
     def _authed(self):
+        # No password configured means open access on the LAN.
+        if not self.core.cfg.get("password"):
+            return True
         return self.core.sessions.valid(self._cookies().get("pg_session", ""))
+
+    def _path(self):
+        """Strip the fnOS gateway prefix so one handler serves both entry points."""
+        path = urlparse(self.path).path
+        prefix = (self.core.cfg.get("gateway_prefix") or "").rstrip("/")
+        if prefix and path.startswith(prefix):
+            path = path[len(prefix):]
+            if not path:
+                path = "/"
+        return path or "/"
 
     def _send(self, status, body, ctype="application/json; charset=utf-8", extra=None):
         if isinstance(body, str):
@@ -184,7 +189,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_get(self):
         parsed = urlparse(self.path)
-        path = parsed.path
+        path = self._path()
         query = parse_qs(parsed.query)
 
         if path == "/" or path == "/index.html":
@@ -199,7 +204,7 @@ class Handler(BaseHTTPRequestHandler):
             cfg = self.core.cfg
             return self._json({
                 "authed": self._authed(),
-                "needs_setup": not bool(cfg.get("password")),
+                "needs_setup": False,
                 "version": self.core.version,
                 "app": "portguard",
             })
@@ -235,11 +240,12 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(404, "not found", "text/plain; charset=utf-8")
 
     def _handle_post(self):
-        parsed = urlparse(self.path)
-        path = parsed.path
-        ip = self.client_address[0]
+        path = self._path()
+        ip = self.client_address[0] if isinstance(self.client_address, tuple) else "127.0.0.1"
 
         if path == "/api/login":
+            if not self.core.cfg.get("password"):
+                return self._json({"ok": True})
             if not self.core.sessions.throttle(ip):
                 return self._json({"error": "尝试过于频繁，请稍后再试"}, 429)
             data = self._body_json()
@@ -253,22 +259,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": "口令错误"}, 401)
 
         if path == "/api/setup":
-            if self.core.cfg.get("password"):
-                return self._json({"error": "已完成初始化"}, 403)
-            if not self.core.sessions.throttle(ip):
-                return self._json({"error": "尝试过于频繁，请稍后再试"}, 429)
-            if not _is_local(ip) or time.time() - self.core.started > 1800:
-                return self._json({"error": "初始化窗口已关闭，请在 NAS 本机或 30 分钟内完成设置"}, 403)
-            data = self._body_json()
-            password = (data.get("password") or "").strip()
-            if len(password) < 8:
-                return self._json({"error": "口令至少 8 位"}, 400)
-            self.core.set_password(password)
-            token = self.core.sessions.issue()
-            return self._json({"ok": True, "password_set": True}, extra={
-                "Set-Cookie": "pg_session=%s; Path=/; HttpOnly; SameSite=Strict; Max-Age=%d"
-                              % (token, SESSION_TTL)
-            })
+            # Password is configured through the install/config wizard only.
+            return self._json({"error": "请在应用中心「设置」中修改口令"}, 403)
 
         if not self._authed():
             return self._json({"error": "unauthorized"}, 401)
@@ -357,8 +349,38 @@ class Handler(BaseHTTPRequestHandler):
         })
 
 
+class UnixHTTPServer(ThreadingHTTPServer):
+    """HTTP over a unix socket, used by the fnOS gateway (same-origin iframe)."""
+
+    address_family = getattr(socket, "AF_UNIX", socket.AF_INET)
+    allow_reuse_address = False
+    daemon_threads = True
+
+    def server_bind(self):
+        try:
+            if os.path.exists(self.server_address):
+                os.unlink(self.server_address)
+        except OSError:
+            pass
+        self.socket.bind(self.server_address)
+        self.server_name = "localhost"
+        self.server_port = 0
+        try:
+            os.chmod(self.server_address, 0o666)
+        except OSError:
+            pass
+
+
 def serve(core):
     httpd = ThreadingHTTPServer((core.cfg.get("bind", "0.0.0.0"), int(core.cfg["port"])), Handler)
     httpd.core = core
     httpd.daemon_threads = True
+    return httpd
+
+
+def serve_gateway(core, path):
+    if not hasattr(socket, "AF_UNIX"):
+        raise OSError("当前系统不支持 Unix socket")
+    httpd = UnixHTTPServer(path, Handler)
+    httpd.core = core
     return httpd

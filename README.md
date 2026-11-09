@@ -88,15 +88,30 @@ sudo appcenter-cli manual-install enable
 sudo appcenter-cli install-fpk portguard.fpk
 ```
 
-装完访问 `http://<NAS>:18110`，或点桌面图标。首次访问要设一个口令，之后用口令登录。
+安装向导里有两项：**服务端口**（默认 18110，只影响直连访问）和**访问口令**（留空即免密码）。
 
-忘了口令：
+装完点桌面图标，界面直接在飞牛窗口里打开，不新开浏览器标签页——走的是飞牛应用网关（`/app/portguard/`）加 Unix socket，所以不管你用 HTTP 还是 HTTPS 访问面板都不会有混合内容问题，也不占端口。
+
+想直接访问也可以：`http://<NAS>:端口`。这条路和图标是同一套后端，端口就是安装时填的那个。
+
+口令只用于直连访问。通过飞牛窗口打开时，系统已经校验过登录身份，不会再问一次。免密码的话，能访问 NAS 面板的人都能打开这个页面——LAN 环境下通常没问题，介意就在安装时设一个。
+
+忘了口令，重跑一次配置向导（应用中心 → 设置），或者命令行：
 
 ```bash
 VAR=$(readlink -f /var/apps/portguard/var)
 /var/apps/portguard/target/portguardd --init --data "$VAR" --password '新口令'
 /var/apps/portguard/cmd/main start
 ```
+
+## 访问方式
+
+| 入口 | 地址 | 鉴权 |
+|---|---|---|
+| 桌面图标 | 飞牛窗口内 `/app/portguard/` | 飞牛登录态 |
+| 直连 | `http://<NAS>:端口` | 设了口令就要登录，没设就直接进 |
+
+两种入口用的是同一个进程、同一份数据。改了端口只需要重启应用，图标不受影响。
 
 ## 自己打包
 
@@ -139,16 +154,16 @@ sudo strace -f -p $(cat /var/apps/portguard/var/run/portguard.pid) \
 
 ## 已知不足
 
+- 窗口内打开走的是飞牛网关 socket，配置方式参照了同版本上正常工作的 Lucky，但 PortGuard 自己还没在实机安装验证过。如果图标点了没反应，先用直连地址，然后把 `logs/portguard.log` 发出来。
 - 容器内进程名依赖 `nsenter`。distroless 之类的镜像读不到进程名，只能确认端口在监听。
 - 端口控制走 `appcenter-cli` 的语义，个别应用如果带自动重启策略，停掉后可能被拉起来。
-- 目前是独立端口 18110，还没走飞牛的网关 socket。那个模式不暴露 TCP 端口，但没有公开文档，跨版本可能变。
 - 时间线只记录端口开合、状态变化和控制动作，趋势图还没做。
 - ARM 没在实机上验证过。
 
 ## 开发
 
 ```bash
-python3 tests/smoke.py      # 22 项：地址解析、状态机、冲突、归因、控制白名单、鉴权
+python3 tests/smoke.py      # 23 项：地址解析、状态机、冲突、归因、控制白名单、网关前缀、鉴权
 python3 tests/fpk_check.py  # 包结构、manifest 与 ui/config 的一致性
 ```
 

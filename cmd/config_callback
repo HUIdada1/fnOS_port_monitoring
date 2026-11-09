@@ -10,19 +10,63 @@ APP_LINK="/var/apps/portguard"
     TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
 
 PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+ERR="${TRIM_TEMP_LOGFILE:-/dev/null}"
+PORT="${wizard_port:-}"
+
+if [ -n "${PORT}" ]; then
+    MSG="$("${PY}" - "${PORT}" <<'PYEOF'
+import sys
+
+try:
+    port = int(sys.argv[1])
+except ValueError:
+    print("端口必须是数字")
+    sys.exit(1)
+if not (1 <= port <= 65535):
+    print("端口 %d 超出 1-65535 范围" % port)
+    sys.exit(1)
+
+busy = False
+for path in ("/proc/net/tcp", "/proc/net/tcp6"):
+    try:
+        with open(path) as fh:
+            next(fh, None)
+            for line in fh:
+                fields = line.split()
+                if len(fields) > 3 and fields[3] == "0A":
+                    if int(fields[1].rsplit(":", 1)[1], 16) == port:
+                        busy = True
+                        break
+    except (OSError, ValueError, IndexError):
+        continue
+    if busy:
+        break
+
+if busy:
+    print("端口 %d 已被占用，请换一个端口" % port)
+    sys.exit(1)
+
+print("ok")
+PYEOF
+)"
+    if [ $? -ne 0 ]; then
+        echo "${MSG}" > "${ERR}"
+        exit 1
+    fi
+fi
 
 ARGS=("--init" "--data" "${TRIM_PKGVAR}")
 
+if [ -n "${PORT}" ]; then
+    ARGS+=("--port" "${PORT}")
+fi
 if [ -n "${wizard_interval:-}" ]; then
     ARGS+=("--interval" "${wizard_interval}")
 fi
-if [ -n "${wizard_admin_password:-}" ]; then
+if [ "${wizard_no_password:-false}" = "true" ]; then
+    ARGS+=("--no-password")
+elif [ -n "${wizard_admin_password:-}" ]; then
     ARGS+=("--password" "${wizard_admin_password}")
-fi
-if [ "${wizard_bind_local:-}" = "true" ]; then
-    ARGS+=("--bind" "127.0.0.1")
-elif [ "${wizard_bind_local:-}" = "false" ]; then
-    ARGS+=("--bind" "0.0.0.0")
 fi
 
 "${PY}" "${TRIM_APPDEST}/portguardd" "${ARGS[@]}" >> "${TRIM_PKGVAR}/logs/config.log" 2>&1

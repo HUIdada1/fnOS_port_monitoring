@@ -1,5 +1,5 @@
 #!/bin/bash
-# 安装后初始化：写入配置、建立数据库
+# 安装后初始化：校验端口、写入配置、建立数据库
 set -u
 export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
 
@@ -11,22 +11,59 @@ APP_LINK="/var/apps/${APPNAME}"
 [ -z "${TRIM_PKGVAR:-}" ] && [ -L "${APP_LINK}/var" ] && \
     TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
 
-TRIM_SERVICE_PORT="${TRIM_SERVICE_PORT:-18110}"
 PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
 ERR="${TRIM_TEMP_LOGFILE:-/dev/null}"
+PORT="${wizard_port:-${TRIM_SERVICE_PORT:-18110}}"
 
 mkdir -p "${TRIM_PKGVAR}" 2>/dev/null
 mkdir -p "${TRIM_PKGVAR}/logs" 2>/dev/null
 mkdir -p "${TRIM_PKGVAR}/run" 2>/dev/null
 chmod 700 "${TRIM_PKGVAR}" 2>/dev/null
 
-BIND="0.0.0.0"
-[ "${wizard_bind_local:-false}" = "true" ] && BIND="127.0.0.1"
+MSG="$("${PY}" - "${PORT}" <<'PYEOF'
+import sys
+
+try:
+    port = int(sys.argv[1])
+except ValueError:
+    print("端口必须是数字")
+    sys.exit(1)
+if not (1 <= port <= 65535):
+    print("端口 %d 超出 1-65535 范围" % port)
+    sys.exit(1)
+
+busy = False
+for path in ("/proc/net/tcp", "/proc/net/tcp6"):
+    try:
+        with open(path) as fh:
+            next(fh, None)
+            for line in fh:
+                fields = line.split()
+                if len(fields) > 3 and fields[3] == "0A":
+                    if int(fields[1].rsplit(":", 1)[1], 16) == port:
+                        busy = True
+                        break
+    except (OSError, ValueError, IndexError):
+        continue
+    if busy:
+        break
+
+if busy:
+    print("端口 %d 已被占用，请换一个端口" % port)
+    sys.exit(1)
+
+print("ok")
+PYEOF
+)"
+if [ $? -ne 0 ]; then
+    echo "${MSG}" > "${ERR}"
+    exit 1
+fi
 
 "${PY}" "${TRIM_APPDEST}/portguardd" --init \
     --data "${TRIM_PKGVAR}" \
-    --port "${TRIM_SERVICE_PORT}" \
-    --bind "${BIND}" \
+    --port "${PORT}" \
+    --bind "0.0.0.0" \
     --interval "${wizard_interval:-10}" \
     --password "${wizard_admin_password:-}" 2>>"${TRIM_PKGVAR}/logs/install.log"
 
