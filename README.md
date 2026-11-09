@@ -2,7 +2,7 @@
 
 飞牛 NAS 的端口态势感知应用，打包成 `.fpk`，从应用中心安装。
 
-飞牛上关于端口的信息其实都在本机：`/proc/net/*` 里有 socket 表，`/proc/<pid>/cgroup` 能追到服务归属，`nft list ruleset` 里有容器映射和流量计数。`ss` 只是把第一层显示出来，后面几层要靠人自己拼。PortGuard 做的就是把这四层拼起来，并给出判断。
+飞牛上关于端口的信息其实都在本机：`/proc/net/*` 里有 socket 表，`/proc/<pid>/cgroup` 能追到服务归属，`nft list ruleset` 里有容器映射和流量计数。`ss` 只是把第一层显示出来，后面几层要靠人自己拼。PortGuard 把这四层拼起来，给出判断；需要的时候，也能从界面上把端口背后的服务停掉。
 
 ## 它解决什么问题
 
@@ -61,6 +61,24 @@
 
 风险分是三个维度相加：暴露面、服务敏感度、鉴权情况。这里有个坑——如果直接按"绑 0.0.0.0 就加满分"算，SSH、SMB、飞牛网关、面板全是 82 分，高危就没有意义了。所以对"本来就应该监听全网卡"的服务（nginx、SMB、网关这类）只计 60% 的暴露分。用实测数据跑，分布落在 85/77/77/72/62/49/45/31 这个区间：数据库和外露面板在顶部，系统常规服务在中段，本机监听在底部。
 
+## 端口控制
+
+详情抽屉里有"停止服务"和"启动服务"，只对三类目标有效：
+
+| 归属 | 实际执行 |
+|---|---|
+| 容器 | `docker stop` / `docker start` 容器名 |
+| 飞牛应用 | `appcenter-cli stop` / `start` appname |
+| 系统服务 | `systemctl stop` / `start` unit |
+
+其余一律拒绝：识别不到归属的裸进程、被多个进程共享的端口、没有监听的幽灵端口。
+
+这些端口永远不给控制：22（SSH）、80/443（面板）、30018/30019（飞牛网关）、18110（自身），以及 `sshd`、`trim_nginx`、`trim_app_center`、`docker` 这类关键 unit。理由很简单——点错一下就连不回来了。
+
+每次操作有确认弹窗，结果写进时间线。配置项 `control_enabled` 设为 `false` 可以整体关掉。
+
+停止服务会中断正在建立的连接，这是停止本身的结果，不是 bug。没有做"只关端口、保留服务"（比如防火墙 drop），因为那样服务还活着，只是外面连不进来，状态更难解释。
+
 ## 安装
 
 从 Releases 下载 `portguard.fpk`，应用中心右上角"手动安装"选中即可。也可以用命令行：
@@ -100,6 +118,8 @@ manifest 里写的是 `platform = all`。fnpack 1.2.3 接受这个值；如果�
 
 归因要读 `/proc/<pid>/fd`、`/proc/<pid>/cgroup`、`nft list ruleset`，还要 `nsenter` 进容器网络命名空间，这些只有 root 能读全。1Panel、Lucky、fntermx 也都是这么跑的。
 
+采集路径不写任何文件。只有你手动点"停止/启动"时，才会调用 `systemctl`、`docker` 或 `appcenter-cli` 对白名单里的那一类目标执行一次命令。读和写的边界在代码里是分开的：`pg_collect`、`pg_net`、`pg_apps` 只有读操作，`pg_action` 才碰控制命令。
+
 只读这件事可以自己验证：
 
 ```bash
@@ -107,7 +127,7 @@ sudo strace -f -p $(cat /var/apps/portguard/var/run/portguard.pid) \
   -e trace=openat,unlink,rename -qq 2>&1 | grep -v '/var/apps/portguard'
 ```
 
-正常情况下，除了应用自己的数据目录（`TRIM_PKGVAR`，放 SQLite、配置和日志），不应该出现任何写操作。代码里也没有 `systemctl`、`docker restart` 之类的调用。
+只要不点控制按钮，除了应用自己的数据目录（`TRIM_PKGVAR`，放 SQLite、配置和日志），不应该出现任何写操作。
 
 ## 兼容性
 
@@ -120,14 +140,15 @@ sudo strace -f -p $(cat /var/apps/portguard/var/run/portguard.pid) \
 ## 已知不足
 
 - 容器内进程名依赖 `nsenter`。distroless 之类的镜像读不到进程名，只能确认端口在监听。
+- 端口控制走 `appcenter-cli` 的语义，个别应用如果带自动重启策略，停掉后可能被拉起来。
 - 目前是独立端口 18110，还没走飞牛的网关 socket。那个模式不暴露 TCP 端口，但没有公开文档，跨版本可能变。
-- 时间线只记录端口开合和状态变化，趋势图还没做。
+- 时间线只记录端口开合、状态变化和控制动作，趋势图还没做。
 - ARM 没在实机上验证过。
 
 ## 开发
 
 ```bash
-python3 tests/smoke.py      # 12 项：地址解析、状态机、冲突、归因、鉴权
+python3 tests/smoke.py      # 22 项：地址解析、状态机、冲突、归因、控制白名单、鉴权
 python3 tests/fpk_check.py  # 包结构、manifest 与 ui/config 的一致性
 ```
 
@@ -136,6 +157,7 @@ python3 tests/fpk_check.py  # 包结构、manifest 与 ui/config 的一致性
 ```
 app/           安装后成为 target/
   portguardd   入口
+  pg_action    端口控制（stop/start，白名单）
   pg_collect   /proc 采集
   pg_analyze   状态机、冲突、评分
   pg_apps      应用清单、容器元数据、netns 穿透

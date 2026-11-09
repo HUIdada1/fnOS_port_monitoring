@@ -20,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP = os.path.join(ROOT, "app")
 sys.path.insert(0, APP)
 
+import pg_action          # noqa: E402
 import pg_analyze          # noqa: E402
 import pg_apps             # noqa: E402
 import pg_collect          # noqa: E402
@@ -172,6 +173,56 @@ class TestContainerParsers(unittest.TestCase):
         self.assertEqual(pg_apps._parse_procnet(text), {41750})
 
 
+class TestControl(unittest.TestCase):
+    def rec(self, **kw):
+        base = {"port": 3306, "proto": "tcp", "state": "ACTIVE",
+                "app_kind": "docker", "container": "mysql",
+                "unit": "", "app_raw": "", "conflicts": [], "pids": [1]}
+        base.update(kw)
+        return base
+
+    def test_docker_allowed(self):
+        ctl = pg_action.build_control(self.rec())
+        self.assertTrue(ctl["allowed"])
+        self.assertEqual(ctl["target"], "mysql")
+
+    def test_protected_ports(self):
+        for port in (22, 80, 443, 30018, 30019, 18110):
+            ctl = pg_action.build_control(self.rec(port=port))
+            self.assertFalse(ctl["allowed"], port)
+
+    def test_protected_units(self):
+        ctl = pg_action.build_control(self.rec(
+            port=8005, app_kind="system", unit="trim_nginx"))
+        self.assertFalse(ctl["allowed"])
+
+    def test_self_app(self):
+        ctl = pg_action.build_control(self.rec(
+            port=18111, app_kind="fnos", app_raw="portguard"))
+        self.assertFalse(ctl["allowed"])
+
+    def test_shared_denied(self):
+        ctl = pg_action.build_control(self.rec(
+            conflicts=[{"code": "SHARED", "level": "info", "detail": ""}]))
+        self.assertFalse(ctl["allowed"])
+
+    def test_ghost_denied(self):
+        ctl = pg_action.build_control(self.rec(state="GHOST_SOFT"))
+        self.assertFalse(ctl["allowed"])
+
+    def test_unknown_denied(self):
+        ctl = pg_action.build_control(self.rec(app_kind="unknown", container=""))
+        self.assertFalse(ctl["allowed"])
+
+    def test_disabled(self):
+        ctl = pg_action.build_control(self.rec(), enabled=False)
+        self.assertFalse(ctl["allowed"])
+
+    def test_execute_refuses_denied(self):
+        out = pg_action.execute(self.rec(port=22), "stop")
+        self.assertFalse(out["ok"])
+
+
 class FakeCore(object):
     def __init__(self, data_dir):
         self.app_dir = APP
@@ -191,6 +242,9 @@ class FakeCore(object):
     def refresh(self, force=False):
         pass
 
+    def act(self, port, proto, action):
+        return {"ok": False, "message": "test stub"}
+
     def set_password(self, password):
         self.cfg["password"] = pg_config.hash_password(password)
 
@@ -204,23 +258,28 @@ class TestServer(unittest.TestCase):
         cls.port = cls.httpd.server_address[1]
         cls.thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
         cls.thread.start()
-        cls.jar = http.cookiejar.CookieJar()
-        cls.opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(cls.jar))
+
+    def setUp(self):
+        # each test starts from a clean auth state
+        self.core.cfg["password"] = ""
+        self.core.sessions = pg_server.Sessions()
+        self.jar = http.cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(self.jar))
 
     @classmethod
     def tearDownClass(cls):
         cls.httpd.shutdown()
         cls.httpd.server_close()
 
-    def call(self, path, payload=None):
+    def call(self, path, payload=None, headers=None):
         url = "http://127.0.0.1:%d%s" % (self.port, path)
         data = None
-        headers = {}
+        hdrs = dict(headers or {})
         if payload is not None:
             data = json.dumps(payload).encode()
-            headers["Content-Type"] = "application/json"
-        req = urllib.request.Request(url, data=data, headers=headers)
+            hdrs["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, data=data, headers=hdrs)
         try:
             with self.opener.open(req, timeout=5) as resp:
                 return resp.status, json.loads(resp.read().decode())
@@ -257,6 +316,28 @@ class TestServer(unittest.TestCase):
         status, data = self.call("/api/health")
         self.assertEqual(status, 200)
         self.assertTrue(data["ok"])
+
+    def test_action_guards(self):
+        self.call("/api/setup", {"password": "good-pass-123"})
+        payload = {"port": 3306, "proto": "tcp", "action": "stop", "confirm": "stop"}
+
+        status, data = self.call("/api/action", payload)
+        self.assertEqual(status, 403)  # missing X-Requested-With
+
+        status, data = self.call("/api/action", {"port": 3306, "proto": "tcp",
+                                                 "action": "stop", "confirm": "yes"},
+                                 {"X-Requested-With": "portguard"})
+        self.assertEqual(status, 400)
+        self.assertIn("确认", data.get("message", ""))
+
+        status, data = self.call("/api/action", {"port": 3306, "proto": "tcp",
+                                                 "action": "drop", "confirm": "drop"},
+                                 {"X-Requested-With": "portguard"})
+        self.assertEqual(status, 400)
+
+        status, data = self.call("/api/action", payload, {"X-Requested-With": "portguard"})
+        self.assertEqual(status, 400)
+        self.assertFalse(data["ok"])
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import os
 import time
 from collections import deque
 
+import pg_action
 import pg_apps
 import pg_collect
 
@@ -173,7 +174,7 @@ def _risk(exposure_score, sensitivity, auth):
     return score, level
 
 
-def analyze(snap, usage, apps_snapshot, dnat, labels=None):
+def analyze(snap, usage, apps_snapshot, dnat, labels=None, control_enabled=True):
     apps = apps_snapshot.get("apps", {})
     docker = apps_snapshot.get("docker", {"by_id": {}, "by_ip": {}, "by_name": {}})
     fw_ports = apps_snapshot.get("fw", set())
@@ -288,7 +289,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None):
             if not advice:
                 advice = "通常是容器或进程退出后 socket 未回收，重启对应容器或主机即可释放"
 
-        records.append({
+        rec = {
             "port": port,
             "proto": proto,
             "state": state,
@@ -328,7 +329,9 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None):
             "n_links": len(socks),
             "note": "",
             "accepted": False,
-        })
+        }
+        rec["control"] = pg_action.build_control(rec, control_enabled)
+        records.append(rec)
 
     # conflicts that need the whole picture
     by_port = {}
@@ -403,6 +406,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None):
             "inner_proc": "", "inner_ports": [], "inner_verified": False,
             "n_links": 0, "note": "", "accepted": False,
         }
+        rec["control"] = pg_action.build_control(rec, control_enabled)
         records.append(rec)
 
     records.sort(key=lambda r: (-r["risk"], r["port"], r["proto"]))

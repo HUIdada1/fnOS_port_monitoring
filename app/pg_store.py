@@ -144,6 +144,14 @@ class Store(object):
                 self.db.commit()
         return events
 
+    def add_event(self, port, proto, kind, detail, ts=None):
+        with self.lock:
+            self.db.execute(
+                "INSERT INTO event(ts,port,proto,kind,detail) VALUES(?,?,?,?,?)",
+                (int(ts or time.time()), int(port), proto, kind, detail),
+            )
+            self.db.commit()
+
     def timeline(self, limit=120):
         with self.lock:
             rows = self.db.execute(

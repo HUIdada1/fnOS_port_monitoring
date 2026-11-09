@@ -19,6 +19,7 @@ DEFAULTS = {
     "password": "",
     "lang": "zh",
     "show_kernel": True,
+    "control_enabled": True,
 }
 
 PBKDF2_ROUNDS = 120000

@@ -20,6 +20,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 if APP_DIR not in sys.path:
     sys.path.insert(0, APP_DIR)
 
+import pg_action
 import pg_analyze
 import pg_apps
 import pg_collect
@@ -28,7 +29,7 @@ import pg_net
 import pg_server
 import pg_store
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 LOG_PREFIX = "[portguard]"
 
 
@@ -66,7 +67,9 @@ class Core(object):
                 dnat = pg_net.read_dnat()
                 self._last_dnat = dnat
                 self.usage.update(snap["ts"], pg_collect.established(), dnat.get("rules", []))
-                records, overview, conflicts = pg_analyze.analyze(snap, self.usage, meta, dnat)
+                records, overview, conflicts = pg_analyze.analyze(
+                    snap, self.usage, meta, dnat,
+                    control_enabled=bool(self.cfg.get("control_enabled", True)))
 
                 labels = self.store.labels()
                 for rec in records:
@@ -111,6 +114,31 @@ class Core(object):
     def set_password(self, password):
         self.cfg["password"] = pg_config.hash_password(password)
         pg_config.save(self.data_dir, self.cfg)
+
+    def act(self, port, proto, action):
+        """Stop or start the unit behind a port, then refresh the snapshot."""
+        state = self.get_state()
+        rec = None
+        for item in state.get("ports", []):
+            if item.get("port") == port and item.get("proto") == proto:
+                rec = item
+                break
+        if rec is None:
+            return {"ok": False, "message": "端口不存在或已变化，请刷新后重试"}
+
+        result = pg_action.execute(rec, action, bool(self.cfg.get("control_enabled", True)))
+        control = rec.get("control") or {}
+        detail = "%s %s" % ("停止" if action == "stop" else "启动",
+                            control.get("label") or "端口 %d" % port)
+        if not result.get("ok"):
+            detail += "（失败）"
+        try:
+            self.store.add_event(port, proto, "ACTION", detail)
+        except Exception as exc:
+            log("event write failed:", exc)
+
+        self.scan_once()
+        return result
 
     def save_cfg(self):
         pg_config.save(self.data_dir, self.cfg)
