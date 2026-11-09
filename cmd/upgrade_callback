@@ -1,0 +1,21 @@
+#!/bin/bash
+# 升级后：确保数据目录存在、数据库结构就绪
+set -u
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+APP_LINK="/var/apps/portguard"
+[ -z "${TRIM_APPDEST:-}" ] && [ -e "${APP_LINK}" ] && \
+    TRIM_APPDEST="$(readlink -f "${APP_LINK}/target" 2>/dev/null)"
+[ -z "${TRIM_PKGVAR:-}" ] && [ -L "${APP_LINK}/var" ] && \
+    TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
+
+PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+
+mkdir -p "${TRIM_PKGVAR}/logs" "${TRIM_PKGVAR}/run" 2>/dev/null
+
+"${PY}" "${TRIM_APPDEST}/portguardd" --migrate --data "${TRIM_PKGVAR}" \
+    >> "${TRIM_PKGVAR}/logs/upgrade.log" 2>&1
+
+# 旧版本可能残留 pid 文件
+rm -f "${TRIM_PKGVAR}/run/portguard.pid"
+exit 0

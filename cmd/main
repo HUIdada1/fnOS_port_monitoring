@@ -1,0 +1,106 @@
+#!/bin/bash
+# PortGuard lifecycle: start | stop | status
+set -u
+
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+APPNAME=portguard
+APP_LINK="/var/apps/${APPNAME}"
+
+# Resolve runtime paths. fnOS injects TRIM_* but be defensive about it.
+if [ -z "${TRIM_APPDEST:-}" ] || [ ! -d "${TRIM_APPDEST:-}" ]; then
+    [ -e "${APP_LINK}" ] && TRIM_APPDEST="$(readlink -f "${APP_LINK}" 2>/dev/null)"
+fi
+if [ -z "${TRIM_PKGVAR:-}" ] || [ ! -d "${TRIM_PKGVAR:-}" ]; then
+    [ -L "${APP_LINK}/var" ] && TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
+fi
+if [ -z "${TRIM_PKGVAR:-}" ] && [ -n "${TRIM_APPDEST:-}" ]; then
+    TRIM_PKGVAR="$(echo "${TRIM_APPDEST}" | sed 's|/@appcenter/|/@appdata/|')"
+fi
+if [ -z "${TRIM_SERVICE_PORT:-}" ] || ! [ "${TRIM_SERVICE_PORT}" -gt 0 ] 2>/dev/null; then
+    TRIM_SERVICE_PORT=18110
+fi
+
+if [ -z "${TRIM_APPDEST:-}" ] || [ ! -f "${TRIM_APPDEST}/portguardd" ]; then
+    echo "无法定位应用目录（TRIM_APPDEST='${TRIM_APPDEST:-}'）" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+    exit 1
+fi
+
+PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+RUN_DIR="${TRIM_PKGVAR}/run"
+LOG_DIR="${TRIM_PKGVAR}/logs"
+PIDFILE="${RUN_DIR}/portguard.pid"
+LOGFILE="${LOG_DIR}/portguard.log"
+
+mkdir -p "${RUN_DIR}" "${LOG_DIR}" 2>/dev/null
+
+pid_of() {
+    [ -f "${PIDFILE}" ] || return 1
+    local pid
+    pid="$(cat "${PIDFILE}" 2>/dev/null)"
+    [ -n "${pid}" ] || return 1
+    kill -0 "${pid}" 2>/dev/null || return 1
+    echo "${pid}"
+}
+
+is_running() {
+    pid_of >/dev/null 2>&1
+}
+
+start() {
+    if is_running; then
+        exit 0
+    fi
+    rm -f "${PIDFILE}"
+
+    # keep logs bounded on small system partitions
+    if [ -f "${LOGFILE}" ]; then
+        size="$(stat -c%s "${LOGFILE}" 2>/dev/null || echo 0)"
+        if [ "${size:-0}" -gt 5242880 ] 2>/dev/null; then
+            mv -f "${LOGFILE}" "${LOGFILE}.1" 2>/dev/null
+        fi
+    fi
+
+    if command -v setsid >/dev/null 2>&1; then
+        setsid "${PY}" "${TRIM_APPDEST}/portguardd" \
+            --port "${TRIM_SERVICE_PORT}" --data "${TRIM_PKGVAR}" \
+            >> "${LOGFILE}" 2>&1 &
+    else
+        nohup "${PY}" "${TRIM_APPDEST}/portguardd" \
+            --port "${TRIM_SERVICE_PORT}" --data "${TRIM_PKGVAR}" \
+            >> "${LOGFILE}" 2>&1 &
+    fi
+    echo $! > "${PIDFILE}"
+
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+        sleep 0.3
+        is_running && exit 0
+    done
+
+    echo "PortGuard 启动失败，请查看 ${LOGFILE}" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+    tail -n 5 "${LOGFILE}" >> "${TRIM_TEMP_LOGFILE:-/dev/null}" 2>/dev/null
+    rm -f "${PIDFILE}"
+    exit 1
+}
+
+stop() {
+    local pid
+    if pid="$(pid_of)"; then
+        kill -TERM "-${pid}" 2>/dev/null || kill -TERM "${pid}" 2>/dev/null
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            sleep 0.3
+            kill -0 "${pid}" 2>/dev/null || break
+        done
+        kill -0 "${pid}" 2>/dev/null && kill -KILL "-${pid}" 2>/dev/null
+        kill -0 "${pid}" 2>/dev/null && kill -KILL "${pid}" 2>/dev/null
+    fi
+    rm -f "${PIDFILE}"
+    exit 0
+}
+
+case "${1:-}" in
+    start)   start ;;
+    stop)    stop ;;
+    status)  is_running && exit 0 || exit 3 ;;
+    *)       exit 1 ;;
+esac

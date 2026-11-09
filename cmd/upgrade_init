@@ -1,0 +1,6 @@
+#!/bin/bash
+# 升级前：停止服务，避免二进制被替换时仍在运行
+set -u
+DIR="$(cd "$(dirname "$0")" && pwd)"
+[ -x "${DIR}/main" ] && "${DIR}/main" stop
+exit 0

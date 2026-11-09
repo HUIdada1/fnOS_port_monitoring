@@ -1,0 +1,6 @@
+#!/bin/bash
+# 卸载前：停止服务
+set -u
+DIR="$(cd "$(dirname "$0")" && pwd)"
+[ -x "${DIR}/main" ] && "${DIR}/main" stop
+exit 0

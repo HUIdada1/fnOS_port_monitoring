@@ -1,0 +1,60 @@
+#!/bin/bash
+# 安装前预检：Python 运行时、标准库、端口占用、同类应用
+set -u
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+PORT="${TRIM_SERVICE_PORT:-18110}"
+PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+ERR="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+fail() {
+    echo "$1" > "${ERR}"
+    exit 1
+}
+
+[ -x "${PY}" ] || fail "未找到 python3。PortGuard 依赖系统自带的 Python 3，无法继续安装。"
+
+"${PY}" - <<'PYEOF' || exit 1
+import sys
+mods = ["json", "socket", "sqlite3", "subprocess", "http.server", "hmac", "hashlib"]
+missing = []
+for name in mods:
+    try:
+        __import__(name)
+    except Exception:
+        missing.append(name)
+if missing:
+    sys.stderr.write("缺少 Python 标准库: %s\n" % ", ".join(missing))
+    sys.exit(1)
+PYEOF
+
+# 端口占用检查（checkport 由系统执行，这里先给出可读的错误）
+"${PY}" - "${PORT}" <<'PYEOF'
+import sys
+port = int(sys.argv[1])
+busy = False
+for path in ("/proc/net/tcp", "/proc/net/tcp6"):
+    try:
+        with open(path) as fh:
+            next(fh, None)
+            for line in fh:
+                f = line.split()
+                if len(f) > 3 and f[3] == "0A":
+                    if int(f[1].rsplit(":", 1)[1], 16) == port:
+                        busy = True
+                        break
+    except OSError:
+        pass
+    if busy:
+        break
+if busy:
+    sys.stderr.write("端口 %d 已被占用，请先释放该端口再安装 PortGuard。\n" % port)
+    sys.exit(1)
+PYEOF
+
+# 同类应用提示（不阻断安装，仅记录到安装日志）
+if [ -d /var/apps/portview ]; then
+    echo "[info] 检测到已安装 portview（同类应用），两者可以共存；PortGuard 使用 ${PORT} 端口。"
+fi
+
+exit 0

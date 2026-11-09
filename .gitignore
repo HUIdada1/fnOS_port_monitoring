@@ -1,0 +1,19 @@
+# 本地规划文档与调试脚本不进版本库
+docs/
+tools/
+.workbuddy/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 构建产物
+*.fpk
+*.tar.gz
+*.tgz
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini

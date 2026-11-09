@@ -1,0 +1,35 @@
+[
+  {
+    "stepTitle": "访问与采集",
+    "items": [
+      {
+        "type": "password",
+        "field": "wizard_admin_password",
+        "label": "访问口令",
+        "initValue": "",
+        "rules": { "required": true, "min": 8, "max": 64, "message": "至少 8 位，建议 12 位以上" }
+      },
+      {
+        "type": "switch",
+        "field": "wizard_bind_local",
+        "label": "仅本机访问（更安全，需 SSH 隧道访问）",
+        "initValue": "false"
+      },
+      {
+        "type": "select",
+        "field": "wizard_interval",
+        "label": "采样间隔",
+        "options": [
+          { "label": "10 秒（推荐）", "value": "10" },
+          { "label": "30 秒（低功耗）", "value": "30" },
+          { "label": "60 秒（最省资源）", "value": "60" }
+        ],
+        "initValue": "10"
+      },
+      {
+        "type": "tips",
+        "helpText": "PortGuard 全程只读：只读取 <code>/proc</code>、应用清单与 nftables 规则，不修改任何配置、不启停任何服务。"
+      }
+    ]
+  }
+]

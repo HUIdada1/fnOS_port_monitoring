@@ -1,0 +1,31 @@
+[
+  {
+    "stepTitle": "修改设置",
+    "items": [
+      {
+        "type": "password",
+        "field": "wizard_admin_password",
+        "label": "新口令（留空则不修改）",
+        "initValue": "",
+        "rules": { "min": 8, "max": 64, "message": "至少 8 位" }
+      },
+      {
+        "type": "switch",
+        "field": "wizard_bind_local",
+        "label": "仅本机访问",
+        "initValue": "false"
+      },
+      {
+        "type": "select",
+        "field": "wizard_interval",
+        "label": "采样间隔",
+        "options": [
+          { "label": "10 秒", "value": "10" },
+          { "label": "30 秒", "value": "30" },
+          { "label": "60 秒", "value": "60" }
+        ],
+        "initValue": "10"
+      }
+    ]
+  }
+]

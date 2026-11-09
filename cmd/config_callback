@@ -1,0 +1,32 @@
+#!/bin/bash
+# 修改配置后：应用向导参数并重新启动
+set -u
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+APP_LINK="/var/apps/portguard"
+[ -z "${TRIM_APPDEST:-}" ] && [ -e "${APP_LINK}" ] && \
+    TRIM_APPDEST="$(readlink -f "${APP_LINK}/target" 2>/dev/null)"
+[ -z "${TRIM_PKGVAR:-}" ] && [ -L "${APP_LINK}/var" ] && \
+    TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
+
+PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+
+ARGS=("--init" "--data" "${TRIM_PKGVAR}")
+
+if [ -n "${wizard_interval:-}" ]; then
+    ARGS+=("--interval" "${wizard_interval}")
+fi
+if [ -n "${wizard_admin_password:-}" ]; then
+    ARGS+=("--password" "${wizard_admin_password}")
+fi
+if [ "${wizard_bind_local:-}" = "true" ]; then
+    ARGS+=("--bind" "127.0.0.1")
+elif [ "${wizard_bind_local:-}" = "false" ]; then
+    ARGS+=("--bind" "0.0.0.0")
+fi
+
+"${PY}" "${TRIM_APPDEST}/portguardd" "${ARGS[@]}" >> "${TRIM_PKGVAR}/logs/config.log" 2>&1
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+[ -x "${DIR}/main" ] && "${DIR}/main" start
+exit 0

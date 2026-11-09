@@ -1,0 +1,38 @@
+#!/bin/bash
+# 安装后初始化：写入配置、建立数据库
+set -u
+export PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+
+APPNAME=portguard
+APP_LINK="/var/apps/${APPNAME}"
+
+[ -z "${TRIM_APPDEST:-}" ] && [ -e "${APP_LINK}" ] && \
+    TRIM_APPDEST="$(readlink -f "${APP_LINK}/target" 2>/dev/null)"
+[ -z "${TRIM_PKGVAR:-}" ] && [ -L "${APP_LINK}/var" ] && \
+    TRIM_PKGVAR="$(readlink -f "${APP_LINK}/var" 2>/dev/null)"
+
+TRIM_SERVICE_PORT="${TRIM_SERVICE_PORT:-18110}"
+PY="$(command -v python3 2>/dev/null || echo /usr/bin/python3)"
+ERR="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+mkdir -p "${TRIM_PKGVAR}" 2>/dev/null
+mkdir -p "${TRIM_PKGVAR}/logs" 2>/dev/null
+mkdir -p "${TRIM_PKGVAR}/run" 2>/dev/null
+chmod 700 "${TRIM_PKGVAR}" 2>/dev/null
+
+BIND="0.0.0.0"
+[ "${wizard_bind_local:-false}" = "true" ] && BIND="127.0.0.1"
+
+"${PY}" "${TRIM_APPDEST}/portguardd" --init \
+    --data "${TRIM_PKGVAR}" \
+    --port "${TRIM_SERVICE_PORT}" \
+    --bind "${BIND}" \
+    --interval "${wizard_interval:-10}" \
+    --password "${wizard_admin_password:-}" 2>>"${TRIM_PKGVAR}/logs/install.log"
+
+if [ $? -ne 0 ]; then
+    echo "PortGuard 初始化失败，请检查 ${TRIM_PKGVAR}/logs/install.log" > "${ERR}"
+    exit 1
+fi
+
+exit 0
