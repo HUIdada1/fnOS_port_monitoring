@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 import pg_config
+import pg_update
 
 SESSION_TTL = 12 * 3600
 MAX_BODY = 64 * 1024
@@ -226,6 +227,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/ports":
                 state = self.core.get_state()
                 return self._json(state)
+            if path == "/api/settings":
+                return self._json({"title": self.core.store.get_setting("app_title")})
+            if path == "/api/update/status":
+                info = pg_update.snapshot()
+                info["version"] = self.core.version
+                return self._json(info)
             if path == "/api/timeline":
                 try:
                     limit = int((query.get("limit") or ["120"])[0])
@@ -309,6 +316,37 @@ class Handler(BaseHTTPRequestHandler):
                                       bool(data.get("accepted")), alias)
             self.core.refresh(force=False)
             return self._json({"ok": True, "alias": alias})
+
+        if path == "/api/app-label":
+            data = self._body_json()
+            key = (data.get("key") or "").strip()[:120]
+            name = (data.get("name") or "").strip()[:60]
+            if not key:
+                return self._json({"error": "bad key"}, 400)
+            self.core.store.set_app_alias(key, name)
+            self.core.refresh(force=False)
+            return self._json({"ok": True, "key": key, "name": name})
+
+        if path == "/api/settings":
+            data = self._body_json()
+            title = (data.get("title") or "").strip()[:40]
+            self.core.store.set_setting("app_title", title)
+            self.core.refresh(force=False)
+            return self._json({"ok": True, "title": title})
+
+        if path == "/api/update/check":
+            try:
+                info = pg_update.check(self.core.cfg, self.core.version)
+                return self._json(info)
+            except Exception as exc:
+                return self._json({"error": str(exc)[:200] or "检查失败"}, 400)
+
+        if path == "/api/update/apply":
+            if self.headers.get("X-Requested-With") != "portguard":
+                return self._json({"ok": False, "message": "请求来源校验失败"}, 403)
+            if not pg_update.apply_async(self.core.cfg, self.core.app_dir):
+                return self._json({"ok": False, "message": "已有更新任务在进行中"}, 409)
+            return self._json({"ok": True})
 
         return self._json({"error": "not found"}, 404)
 

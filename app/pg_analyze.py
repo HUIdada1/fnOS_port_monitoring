@@ -119,13 +119,18 @@ def _owner_label(app, kind, unit, container):
     return "未归属"
 
 
-def _resolve(sock, apps, docker, dnat_rule):
+def _resolve(sock, apps, docker, dnat_rule, kb_service=""):
     container = None
     cid = sock.get("container", "")
-    if cid and cid in docker.get("by_id", {}):
-        container = docker["by_id"][cid]
+    if cid:
+        table = docker.get("by_id", {})
+        container = table.get(cid) or table.get(cid[:12])
     if container is None and dnat_rule:
         container = docker.get("by_ip", {}).get(dnat_rule.get("dest_ip", ""))
+    if container is None and sock.get("comm") == "docker-proxy":
+        cip, _ = pg_apps.proxy_target(sock.get("cmdline", ""))
+        if cip:
+            container = docker.get("by_ip", {}).get(cip)
 
     app_name = pg_apps.app_from_path(sock.get("exe", ""), apps) or \
         pg_apps.app_from_path(sock.get("cmdline", ""), apps)
@@ -147,6 +152,12 @@ def _resolve(sock, apps, docker, dnat_rule):
             "container": container["name"],
             "image": container["image"],
         }
+    if sock.get("comm") == "docker-proxy":
+        # docker-proxy 代持但容器已不可见（已停止 / inspect 失败）：
+        # 按端口指纹独立成卡，绝不并入 Docker 引擎
+        name = kb_service or ("端口转发 %s" % sock.get("port", ""))
+        return {"app": name, "app_raw": "", "kind": "docker",
+                "container": "", "image": ""}
     unit = sock.get("unit", "")
     if unit:
         return {"app": UNIT_LABELS.get(unit, unit), "app_raw": unit,
@@ -221,7 +232,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None, control_enabled=True)
         owner = None
         owners = []
         for s in socks:
-            cand = _resolve(s, apps, docker, rule)
+            cand = _resolve(s, apps, docker, rule, kb_entry.get("service", ""))
             owners.append(_owner_label(cand["app"], cand["kind"], s.get("unit", ""),
                                        cand["container"]))
             if owner is None or rank.get(cand["kind"], 9) < rank.get(owner["kind"], 9):
@@ -302,6 +313,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None, control_enabled=True)
             "app_raw": owner["app_raw"],
             "app_kind": owner["kind"],
             "app_label": app_label,
+            "app_key": app_label,
             "owners": sorted(set(owners)),
             "comm": comm,
             "pid": pids[0] if pids else 0,
@@ -389,6 +401,7 @@ def analyze(snap, usage, apps_snapshot, dnat, labels=None, control_enabled=True)
             "category": kb_entry.get("category", "unknown"),
             "desc": kb_entry.get("desc", ""), "advice": kb_entry.get("advice", ""),
             "app": "—", "app_raw": "", "app_kind": "none", "app_label": "无监听",
+            "app_key": "无监听",
             "owners": [],
             "comm": "", "pid": 0, "pids": [], "exe": "", "cmdline": "", "cgroup": "",
             "unit": "", "container": "", "image": "",
