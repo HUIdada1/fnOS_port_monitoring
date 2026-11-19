@@ -71,6 +71,10 @@ def load_apps() -> dict:
         except OSError:
             manifest["_target"] = target
         manifest["_dir"] = os.path.join(base, name)
+        label = manifest.get("display_name") or ""
+        if "${" in label:
+            # 部分 manifest 带未解析的模板变量（如 ${common.display_name}），回退到应用名
+            manifest["display_name"] = manifest.get("appname") or name
         apps[manifest.get("appname") or name] = manifest
     return apps
 
@@ -146,6 +150,8 @@ def load_docker() -> dict:
             pid = 0
         info = {"id": cid[:12], "name": name.lstrip("/"), "image": image,
                 "status": status, "ips": ips, "pid": pid}
+        # cgroup scope 里是 64 位全 ID，docker ps -q 是 12 位短 ID，两种都要能查
+        by_id[cid] = info
         by_id[cid[:12]] = info
         by_name[info["name"]] = info
         for ip in ips:
@@ -173,6 +179,25 @@ def app_from_path(text: str, apps: dict):
         if name in apps:
             return name
     return None
+
+
+def proxy_target(cmdline: str):
+    """docker-proxy 命令行里的容器 IP 与端口。
+
+    发布端口的宿主 socket 由 docker-proxy 代持监听（cgroup 挂在 docker.service），
+    命令行自带 -container-ip / -container-port，是反查容器最可靠的一条路。
+    """
+    ip, cport = "", 0
+    parts = (cmdline or "").split()
+    for i, tok in enumerate(parts):
+        if tok == "-container-ip" and i + 1 < len(parts):
+            ip = parts[i + 1]
+        elif tok == "-container-port" and i + 1 < len(parts):
+            try:
+                cport = int(parts[i + 1])
+            except ValueError:
+                pass
+    return ip, cport
 
 
 # ------------------------------------------------------------------ netns peek

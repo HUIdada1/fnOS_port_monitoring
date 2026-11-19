@@ -22,6 +22,9 @@ DEFAULTS = {
     "control_enabled": True,
     "gateway_prefix": "/app/portguard",
     "gateway_socket": "app.sock",
+    "update_repo": "HUIdada1/fnOS_port_monitoring",
+    "update_ref": "main",
+    "update_mirror": "",
 }
 
 PBKDF2_ROUNDS = 120000

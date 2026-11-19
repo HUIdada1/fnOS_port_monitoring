@@ -28,6 +28,12 @@ CREATE TABLE IF NOT EXISTS metric (
   ts INTEGER, port INTEGER, proto TEXT, conns_peak INTEGER, external_delta INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_metric_ts ON metric(ts DESC);
+CREATE TABLE IF NOT EXISTS app_alias (
+  key TEXT PRIMARY KEY, name TEXT DEFAULT '', ts INTEGER
+);
+CREATE TABLE IF NOT EXISTS setting (
+  key TEXT PRIMARY KEY, value TEXT DEFAULT ''
+);
 """
 
 
@@ -193,6 +199,40 @@ class Store(object):
                 "ON CONFLICT(port,proto) DO UPDATE SET note=excluded.note,"
                 "accepted=excluded.accepted,alias=excluded.alias",
                 (int(port), proto, note or "", 1 if accepted else 0, alias or ""),
+            )
+            self.db.commit()
+
+    # ---------------------------------------------------------------- app alias
+    def app_aliases(self):
+        with self.lock:
+            rows = self.db.execute("SELECT key, name FROM app_alias").fetchall()
+        return {r["key"]: (r["name"] or "") for r in rows}
+
+    def set_app_alias(self, key, name=""):
+        with self.lock:
+            if name:
+                self.db.execute(
+                    "INSERT INTO app_alias(key,name,ts) VALUES(?,?,?) "
+                    "ON CONFLICT(key) DO UPDATE SET name=excluded.name,ts=excluded.ts",
+                    (key, name, int(time.time())),
+                )
+            else:
+                self.db.execute("DELETE FROM app_alias WHERE key=?", (key,))
+            self.db.commit()
+
+    # ---------------------------------------------------------------- settings
+    def get_setting(self, key, default=""):
+        with self.lock:
+            row = self.db.execute(
+                "SELECT value FROM setting WHERE key=?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def set_setting(self, key, value=""):
+        with self.lock:
+            self.db.execute(
+                "INSERT INTO setting(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (key, value or ""),
             )
             self.db.commit()
 
